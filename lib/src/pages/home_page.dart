@@ -14,11 +14,13 @@ class HomePage extends StatefulWidget {
   const HomePage({
     super.key,
     required this.terminalName,
+    required this.resetCount,
     required this.loadVisualIdentity,
     required this.loadTerminalContext,
   });
 
   final String? terminalName;
+  final int resetCount;
   final VisualIdentityLoader loadVisualIdentity;
   final TerminalContextLoader loadTerminalContext;
 
@@ -37,6 +39,15 @@ class _HomePageState extends State<HomePage> {
     final terminalName = widget.terminalName;
     if (terminalName != null) {
       _visualIdentity = widget.loadVisualIdentity(terminalName);
+    }
+  }
+
+  @override
+  void didUpdateWidget(covariant HomePage oldWidget) {
+    super.didUpdateWidget(oldWidget);
+
+    if (oldWidget.resetCount != widget.resetCount) {
+      _backToHome();
     }
   }
 
