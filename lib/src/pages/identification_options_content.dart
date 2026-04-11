@@ -3,6 +3,7 @@ import 'dart:typed_data';
 import 'package:flutter/material.dart';
 
 import '../models/terminal_visual_identity.dart';
+import '../widgets/flow_top_bar.dart';
 
 enum IdentificationOption { barcode, cpf, clientCode }
 
@@ -130,99 +131,12 @@ class _IdentificationTopBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final compact = constraints.maxWidth < 560;
-        final sideWidth = compact ? 56.0 : 160.0;
-
-        return Row(
-          children: [
-            SizedBox(
-              width: sideWidth,
-              child: Align(
-                alignment: Alignment.centerLeft,
-                child: compact
-                    ? IconButton(
-                        onPressed: onBack,
-                        color: primaryColor,
-                        icon: const Icon(Icons.arrow_back),
-                        tooltip: 'Voltar',
-                      )
-                    : TextButton.icon(
-                        onPressed: onBack,
-                        icon: const Icon(Icons.arrow_back),
-                        label: const Text('Voltar'),
-                        style: TextButton.styleFrom(
-                          foregroundColor: primaryColor,
-                        ),
-                      ),
-              ),
-            ),
-            Expanded(
-              child: Column(
-                children: [
-                  _IdentificationLogo(
-                    logoBytes: logoBytes,
-                    primaryColor: primaryColor,
-                  ),
-                  const SizedBox(height: 12),
-                  Text(
-                    flowTitle,
-                    textAlign: TextAlign.center,
-                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            SizedBox(
-              width: sideWidth,
-              child: Align(
-                alignment: Alignment.centerRight,
-                child: IconButton.outlined(
-                  onPressed: onHome,
-                  color: primaryColor,
-                  icon: const Icon(Icons.home_rounded),
-                  tooltip: 'Inicio',
-                ),
-              ),
-            ),
-          ],
-        );
-      },
-    );
-  }
-}
-
-class _IdentificationLogo extends StatelessWidget {
-  const _IdentificationLogo({
-    required this.logoBytes,
-    required this.primaryColor,
-  });
-
-  final Uint8List? logoBytes;
-  final Color primaryColor;
-
-  @override
-  Widget build(BuildContext context) {
-    final bytes = logoBytes;
-
-    if (bytes == null) {
-      return Icon(Icons.local_hospital_outlined, size: 48, color: primaryColor);
-    }
-
-    return Image.memory(
-      bytes,
-      height: 52,
-      fit: BoxFit.contain,
-      errorBuilder: (context, error, stackTrace) {
-        return Icon(
-          Icons.local_hospital_outlined,
-          size: 48,
-          color: primaryColor,
-        );
-      },
+    return FlowTopBar(
+      logoBytes: logoBytes,
+      primaryColor: primaryColor,
+      title: flowTitle,
+      onBack: onBack,
+      onHome: onHome,
     );
   }
 }

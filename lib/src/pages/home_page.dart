@@ -7,6 +7,7 @@ import '../widgets/loading_content.dart';
 import '../widgets/page_scaffold.dart';
 import '../widgets/terminal_error_content.dart';
 import '../widgets/terminal_not_found_content.dart';
+import 'cpf_identification_content.dart';
 import 'identification_options_content.dart';
 import 'service_selection_content.dart';
 import 'terminal_home_content.dart';
@@ -33,6 +34,7 @@ class _HomePageState extends State<HomePage> {
   Future<TerminalVisualIdentity>? _visualIdentity;
   Future<TerminalContext>? _terminalContext;
   TerminalService? _selectedService;
+  IdentificationOption? _selectedIdentificationOption;
 
   @override
   void initState() {
@@ -68,12 +70,20 @@ class _HomePageState extends State<HomePage> {
     setState(() {
       _terminalContext = null;
       _selectedService = null;
+      _selectedIdentificationOption = null;
     });
   }
 
   void _backToServices() {
     setState(() {
       _selectedService = null;
+      _selectedIdentificationOption = null;
+    });
+  }
+
+  void _backToIdentificationOptions() {
+    setState(() {
+      _selectedIdentificationOption = null;
     });
   }
 
@@ -92,8 +102,30 @@ class _HomePageState extends State<HomePage> {
   }
 
   void _handleIdentificationOptionSelected(IdentificationOption option) {
+    if (option == IdentificationOption.cpf) {
+      setState(() {
+        _selectedIdentificationOption = option;
+      });
+
+      return;
+    }
+
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text('Identificacao selecionada: ${option.label}')),
+    );
+  }
+
+  void _handleCpfIdentificationSubmit(CpfIdentificationData data) {
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text('CPF informado: ${data.cpf}')));
+  }
+
+  void _handleForgotPassword() {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Recuperacao de senha ainda nao disponivel'),
+      ),
     );
   }
 
@@ -149,6 +181,22 @@ class _HomePageState extends State<HomePage> {
 
               final selectedService = _selectedService;
               if (selectedService != null && selectedService.isPreAttendance) {
+                if (_selectedIdentificationOption == IdentificationOption.cpf) {
+                  return PageScaffold(
+                    alignment: Alignment.topCenter,
+                    identity: identity,
+                    maxWidth: 980,
+                    child: CpfIdentificationContent(
+                      identity: identity,
+                      flowTitle: 'Checkin Pre Atendimento',
+                      onHome: _backToHome,
+                      onBack: _backToIdentificationOptions,
+                      onSubmit: _handleCpfIdentificationSubmit,
+                      onForgotPassword: _handleForgotPassword,
+                    ),
+                  );
+                }
+
                 return PageScaffold(
                   alignment: Alignment.topCenter,
                   identity: identity,

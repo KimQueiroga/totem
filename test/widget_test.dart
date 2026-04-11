@@ -142,6 +142,65 @@ void main() {
     expect(find.text('Codigo cliente'), findsOneWidget);
   });
 
+  testWidgets('opens CPF identification flow and submits form', (tester) async {
+    await tester.pumpWidget(
+      TotemApp(
+        initialUri: Uri.parse('http://127.0.0.1:8080/terminal=ihpmgaimtotem1'),
+        loadVisualIdentity: (_) async => const TerminalVisualIdentity(
+          alias: 'HERMES PARDINI (MG)',
+          primaryColor: Color(0xFFCF043B),
+          primaryHoverColor: Color(0xFF9D032D),
+          buttonColor: Color(0xFFD31245),
+          patientNameColor: Color(0xFFCF043B),
+          logoBase64: '',
+        ),
+        loadTerminalContext: (_) async => const TerminalContext(
+          company: '1',
+          store: '1',
+          printer: 'AIMT0001',
+          location: '1',
+          services: [
+            TerminalService(
+              id: '3',
+              name: 'PRE_ATENDIMENTO',
+              hostName: 'ihpmgaimtotem1',
+              termsOfUse: '',
+            ),
+          ],
+        ),
+      ),
+    );
+
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Iniciar atendimento'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Pre Atendimento'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Usar CPF'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Identificacao com CPF'), findsOneWidget);
+    expect(find.text('CPF'), findsOneWidget);
+    expect(find.text('Data de nascimento'), findsOneWidget);
+    expect(find.text('Senha'), findsOneWidget);
+    expect(find.text('Esqueci minha senha'), findsOneWidget);
+
+    await tester.enterText(
+      find.widgetWithText(TextFormField, 'CPF'),
+      '12345678901',
+    );
+    await tester.enterText(
+      find.widgetWithText(TextFormField, 'Data de nascimento'),
+      '01012000',
+    );
+    await tester.enterText(find.widgetWithText(TextFormField, 'Senha'), '1234');
+    await tester.ensureVisible(find.text('Entrar'));
+    await tester.tap(find.text('Entrar'));
+    await tester.pump();
+
+    expect(find.text('CPF informado: 12345678901'), findsOneWidget);
+  });
+
   testWidgets('returns to home after inactivity timeout', (tester) async {
     await tester.pumpWidget(
       TotemApp(
