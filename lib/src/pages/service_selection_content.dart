@@ -12,12 +12,14 @@ class ServiceSelectionContent extends StatelessWidget {
     required this.identity,
     required this.terminalContext,
     required this.onBack,
+    required this.onServiceSelected,
   });
 
   final String terminalName;
   final TerminalVisualIdentity identity;
   final TerminalContext terminalContext;
   final VoidCallback onBack;
+  final ValueChanged<TerminalService> onServiceSelected;
 
   static const double _serviceGap = 16;
   static const double _twoColumnBreakpoint = 680;
@@ -141,7 +143,7 @@ class ServiceSelectionContent extends StatelessWidget {
                 style: FilledButton.styleFrom(backgroundColor: buttonColor),
                 onPressed: () {
                   Navigator.of(context).pop();
-                  _showSelectedService(context, service);
+                  onServiceSelected(service);
                 },
                 child: const Text('Aceitar'),
               ),
@@ -153,13 +155,7 @@ class ServiceSelectionContent extends StatelessWidget {
       return;
     }
 
-    _showSelectedService(context, service);
-  }
-
-  void _showSelectedService(BuildContext context, TerminalService service) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Servico selecionado: ${service.displayName}')),
-    );
+    onServiceSelected(service);
   }
 }
 

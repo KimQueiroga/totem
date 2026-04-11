@@ -98,6 +98,50 @@ void main() {
     expect(secondPosition.dx, greaterThan(firstPosition.dx));
   });
 
+  testWidgets('opens identification options for pre attendance service', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      TotemApp(
+        initialUri: Uri.parse('http://127.0.0.1:8080/terminal=ihpmgaimtotem1'),
+        loadVisualIdentity: (_) async => const TerminalVisualIdentity(
+          alias: 'HERMES PARDINI (MG)',
+          primaryColor: Color(0xFFCF043B),
+          primaryHoverColor: Color(0xFF9D032D),
+          buttonColor: Color(0xFFD31245),
+          patientNameColor: Color(0xFFCF043B),
+          logoBase64: '',
+        ),
+        loadTerminalContext: (_) async => const TerminalContext(
+          company: '1',
+          store: '1',
+          printer: 'AIMT0001',
+          location: '1',
+          services: [
+            TerminalService(
+              id: '3',
+              name: 'PRE_ATENDIMENTO',
+              hostName: 'ihpmgaimtotem1',
+              termsOfUse: '',
+            ),
+          ],
+        ),
+      ),
+    );
+
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Iniciar atendimento'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Pre Atendimento'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Checkin Pre Atendimento'), findsOneWidget);
+    expect(find.text('Como voce quer acessar?'), findsOneWidget);
+    expect(find.text('Ler codigo de barra'), findsOneWidget);
+    expect(find.text('Usar CPF'), findsOneWidget);
+    expect(find.text('Codigo cliente'), findsOneWidget);
+  });
+
   testWidgets('returns to home after inactivity timeout', (tester) async {
     await tester.pumpWidget(
       TotemApp(

@@ -7,6 +7,7 @@ import '../widgets/loading_content.dart';
 import '../widgets/page_scaffold.dart';
 import '../widgets/terminal_error_content.dart';
 import '../widgets/terminal_not_found_content.dart';
+import 'identification_options_content.dart';
 import 'service_selection_content.dart';
 import 'terminal_home_content.dart';
 
@@ -31,6 +32,7 @@ class HomePage extends StatefulWidget {
 class _HomePageState extends State<HomePage> {
   Future<TerminalVisualIdentity>? _visualIdentity;
   Future<TerminalContext>? _terminalContext;
+  TerminalService? _selectedService;
 
   @override
   void initState() {
@@ -65,7 +67,34 @@ class _HomePageState extends State<HomePage> {
   void _backToHome() {
     setState(() {
       _terminalContext = null;
+      _selectedService = null;
     });
+  }
+
+  void _backToServices() {
+    setState(() {
+      _selectedService = null;
+    });
+  }
+
+  void _handleServiceSelected(TerminalService service) {
+    if (service.isPreAttendance) {
+      setState(() {
+        _selectedService = service;
+      });
+
+      return;
+    }
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('Servico selecionado: ${service.displayName}')),
+    );
+  }
+
+  void _handleIdentificationOptionSelected(IdentificationOption option) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('Identificacao selecionada: ${option.label}')),
+    );
   }
 
   @override
@@ -118,6 +147,23 @@ class _HomePageState extends State<HomePage> {
                 );
               }
 
+              final selectedService = _selectedService;
+              if (selectedService != null && selectedService.isPreAttendance) {
+                return PageScaffold(
+                  alignment: Alignment.topCenter,
+                  identity: identity,
+                  maxWidth: 980,
+                  child: IdentificationOptionsContent(
+                    identity: identity,
+                    flowTitle: 'Checkin Pre Atendimento',
+                    question: 'Como voce quer acessar?',
+                    onHome: _backToHome,
+                    onBack: _backToServices,
+                    onOptionSelected: _handleIdentificationOptionSelected,
+                  ),
+                );
+              }
+
               return PageScaffold(
                 alignment: Alignment.topCenter,
                 identity: identity,
@@ -127,6 +173,7 @@ class _HomePageState extends State<HomePage> {
                   identity: identity,
                   terminalContext: contextSnapshot.data!,
                   onBack: _backToHome,
+                  onServiceSelected: _handleServiceSelected,
                 ),
               );
             },

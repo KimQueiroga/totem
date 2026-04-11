@@ -53,6 +53,8 @@ class TerminalService {
   final String hostName;
   final String termsOfUse;
 
+  bool get isPreAttendance => name.trim().toUpperCase() == 'PRE_ATENDIMENTO';
+
   String get displayName {
     final words = name
         .replaceAll('_', ' ')
