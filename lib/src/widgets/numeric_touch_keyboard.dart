@@ -139,6 +139,7 @@ class NumericTouchKeyboard extends StatelessWidget {
         _letters('qwertyuiop'),
         _letters('asdfghjkl'),
         _letters('zxcvbnm'),
+        const ['@', '#', '*', '?', '!', '-', '_', '.', '+'],
       ],
     };
   }
