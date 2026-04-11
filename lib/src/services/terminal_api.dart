@@ -1,0 +1,82 @@
+import 'dart:convert';
+
+import 'package:http/http.dart' as http;
+
+import '../models/terminal_context.dart';
+import '../models/terminal_visual_identity.dart';
+
+const bffBaseUrl = String.fromEnvironment(
+  'BFF_BASE_URL',
+  defaultValue: 'http://127.0.0.1:8000/api',
+);
+
+typedef VisualIdentityLoader =
+    Future<TerminalVisualIdentity> Function(String terminalName);
+
+typedef TerminalContextLoader =
+    Future<TerminalContext> Function(String terminalName);
+
+Future<TerminalVisualIdentity> fetchTerminalVisualIdentity(
+  String terminalName,
+) async {
+  final uri = Uri.parse(
+    '$bffBaseUrl/terminal-visual',
+  ).replace(queryParameters: {'hostName': terminalName});
+
+  final response = await http.get(uri, headers: {'Accept': 'application/json'});
+
+  if (response.statusCode < 200 || response.statusCode >= 300) {
+    throw Exception(
+      'BFF retornou HTTP ${response.statusCode}: ${_truncate(response.body)}',
+    );
+  }
+
+  final payload = jsonDecode(response.body);
+
+  if (payload is! Map<String, dynamic>) {
+    throw Exception('Resposta do BFF nao e um objeto JSON.');
+  }
+
+  final identity = payload['identidadeVisual'];
+
+  if (identity is! Map<String, dynamic>) {
+    throw Exception('Resposta sem identidadeVisual');
+  }
+
+  return TerminalVisualIdentity.fromJson(identity);
+}
+
+Future<TerminalContext> fetchTerminalContext(String terminalName) async {
+  final uri = Uri.parse(
+    '$bffBaseUrl/terminal-context',
+  ).replace(queryParameters: {'hostName': terminalName});
+
+  final response = await http.get(uri, headers: {'Accept': 'application/json'});
+
+  if (response.statusCode < 200 || response.statusCode >= 300) {
+    throw Exception(
+      'BFF retornou HTTP ${response.statusCode}: ${_truncate(response.body)}',
+    );
+  }
+
+  final payload = jsonDecode(response.body);
+
+  if (payload is! Map<String, dynamic>) {
+    throw Exception('Resposta do BFF nao e um objeto JSON.');
+  }
+
+  final context = payload['contexto'];
+
+  if (context is! Map<String, dynamic>) {
+    throw Exception('Resposta sem contexto.');
+  }
+
+  return TerminalContext.fromJson(context);
+}
+
+String _truncate(String value) {
+  const maxLength = 300;
+  return value.length <= maxLength
+      ? value
+      : '${value.substring(0, maxLength)}...';
+}
