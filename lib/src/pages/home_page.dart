@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../models/client_authentication.dart';
 import '../models/terminal_context.dart';
 import '../models/terminal_visual_identity.dart';
 import '../services/terminal_api.dart';
@@ -8,6 +9,7 @@ import '../widgets/page_scaffold.dart';
 import '../widgets/terminal_error_content.dart';
 import '../widgets/terminal_not_found_content.dart';
 import 'cpf_identification_content.dart';
+import 'client_confirmation_content.dart';
 import 'identification_options_content.dart';
 import 'service_selection_content.dart';
 import 'terminal_home_content.dart';
@@ -19,12 +21,14 @@ class HomePage extends StatefulWidget {
     required this.resetCount,
     required this.loadVisualIdentity,
     required this.loadTerminalContext,
+    required this.authenticateClient,
   });
 
   final String? terminalName;
   final int resetCount;
   final VisualIdentityLoader loadVisualIdentity;
   final TerminalContextLoader loadTerminalContext;
+  final ClientAuthenticator authenticateClient;
 
   @override
   State<HomePage> createState() => _HomePageState();
@@ -33,6 +37,7 @@ class HomePage extends StatefulWidget {
 class _HomePageState extends State<HomePage> {
   Future<TerminalVisualIdentity>? _visualIdentity;
   Future<TerminalContext>? _terminalContext;
+  Future<ClientAuthentication>? _clientAuthentication;
   TerminalService? _selectedService;
   IdentificationOption? _selectedIdentificationOption;
 
@@ -69,6 +74,7 @@ class _HomePageState extends State<HomePage> {
   void _backToHome() {
     setState(() {
       _terminalContext = null;
+      _clientAuthentication = null;
       _selectedService = null;
       _selectedIdentificationOption = null;
     });
@@ -77,6 +83,7 @@ class _HomePageState extends State<HomePage> {
   void _backToServices() {
     setState(() {
       _selectedService = null;
+      _clientAuthentication = null;
       _selectedIdentificationOption = null;
     });
   }
@@ -84,6 +91,13 @@ class _HomePageState extends State<HomePage> {
   void _backToIdentificationOptions() {
     setState(() {
       _selectedIdentificationOption = null;
+      _clientAuthentication = null;
+    });
+  }
+
+  void _backToCpfIdentification() {
+    setState(() {
+      _clientAuthentication = null;
     });
   }
 
@@ -116,9 +130,15 @@ class _HomePageState extends State<HomePage> {
   }
 
   void _handleCpfIdentificationSubmit(CpfIdentificationData data) {
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(SnackBar(content: Text('CPF informado: ${data.cpf}')));
+    setState(() {
+      _clientAuthentication = widget.authenticateClient(
+        ClientCredentials(
+          cpf: data.cpf,
+          password: data.password,
+          birthDate: data.birthDate,
+        ),
+      );
+    });
   }
 
   void _handleForgotPassword() {
@@ -182,6 +202,59 @@ class _HomePageState extends State<HomePage> {
               final selectedService = _selectedService;
               if (selectedService != null && selectedService.isPreAttendance) {
                 if (_selectedIdentificationOption == IdentificationOption.cpf) {
+                  final clientAuthentication = _clientAuthentication;
+
+                  if (clientAuthentication != null) {
+                    return FutureBuilder<ClientAuthentication>(
+                      future: clientAuthentication,
+                      builder: (context, clientSnapshot) {
+                        if (clientSnapshot.connectionState !=
+                            ConnectionState.done) {
+                          return PageScaffold(
+                            identity: identity,
+                            child: const LoadingContent(
+                              message: 'Validando dados do cliente...',
+                            ),
+                          );
+                        }
+
+                        if (clientSnapshot.hasError ||
+                            !clientSnapshot.hasData) {
+                          return PageScaffold(
+                            alignment: Alignment.topCenter,
+                            identity: identity,
+                            maxWidth: 980,
+                            child: TerminalErrorContent(
+                              terminalName: terminalName,
+                              error: clientSnapshot.error,
+                            ),
+                          );
+                        }
+
+                        return PageScaffold(
+                          alignment: Alignment.topCenter,
+                          identity: identity,
+                          maxWidth: 980,
+                          child: ClientConfirmationContent(
+                            identity: identity,
+                            flowTitle: 'Checkin Pre Atendimento',
+                            authentication: clientSnapshot.data!,
+                            onBack: _backToCpfIdentification,
+                            onHome: _backToHome,
+                            onReject: _backToCpfIdentification,
+                            onConfirm: () {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text('Dados confirmados.'),
+                                ),
+                              );
+                            },
+                          ),
+                        );
+                      },
+                    );
+                  }
+
                   return PageScaffold(
                     alignment: Alignment.topCenter,
                     identity: identity,

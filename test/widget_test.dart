@@ -80,6 +80,23 @@ void main() {
             ),
           ],
         ),
+        authenticateClient: (_) async => const ClientAuthentication(
+          id: '9614d1dc-22d7-d27e-8a05-252a65cdf2ea',
+          millisecondsToExpire: 1200000,
+          user: ClientUser(
+            fullName: 'FAKE BEN DEX I O\'NEAL',
+            socialName: null,
+            cpf: '12345678901',
+            birthDate: '1988-04-28',
+            email: 'ben.oneal@pardini.com.br',
+            mobilePhoneNumber: '71857113469',
+            homePhoneNumber: null,
+            motherName: 'CAMERON SHELBY O\'NEAL',
+            streetAndComplement: 'LUIZ ZUDDIO,354',
+            city: 'BELO HORIZONTE',
+            uf: 'MG',
+          ),
+        ),
       ),
     );
 
@@ -126,6 +143,23 @@ void main() {
             ),
           ],
         ),
+        authenticateClient: (_) async => const ClientAuthentication(
+          id: '9614d1dc-22d7-d27e-8a05-252a65cdf2ea',
+          millisecondsToExpire: 1200000,
+          user: ClientUser(
+            fullName: 'FAKE BEN DEX I O\'NEAL',
+            socialName: null,
+            cpf: '12345678901',
+            birthDate: '1988-04-28',
+            email: 'ben.oneal@pardini.com.br',
+            mobilePhoneNumber: '71857113469',
+            homePhoneNumber: null,
+            motherName: 'CAMERON SHELBY O\'NEAL',
+            streetAndComplement: 'LUIZ ZUDDIO,354',
+            city: 'BELO HORIZONTE',
+            uf: 'MG',
+          ),
+        ),
       ),
     );
 
@@ -168,6 +202,23 @@ void main() {
             ),
           ],
         ),
+        authenticateClient: (_) async => const ClientAuthentication(
+          id: '9614d1dc-22d7-d27e-8a05-252a65cdf2ea',
+          millisecondsToExpire: 1200000,
+          user: ClientUser(
+            fullName: 'FAKE BEN DEX I O\'NEAL',
+            socialName: null,
+            cpf: '12345678901',
+            birthDate: '1988-04-28',
+            email: 'ben.oneal@pardini.com.br',
+            mobilePhoneNumber: '71857113469',
+            homePhoneNumber: null,
+            motherName: 'CAMERON SHELBY O\'NEAL',
+            streetAndComplement: 'LUIZ ZUDDIO,354',
+            city: 'BELO HORIZONTE',
+            uf: 'MG',
+          ),
+        ),
       ),
     );
 
@@ -196,9 +247,11 @@ void main() {
     await _tapKeyboardNext(tester);
     await tester.ensureVisible(find.text('Entrar'));
     await tester.tap(find.text('Entrar'));
-    await tester.pump();
+    await tester.pumpAndSettle();
 
-    expect(find.text('CPF informado: 12345678901'), findsOneWidget);
+    expect(find.text('Confirme seus dados'), findsOneWidget);
+    expect(find.text('FAKE BEN DEX I O\'NEAL'), findsOneWidget);
+    expect(find.text('ben.oneal@pardini.com.br'), findsOneWidget);
   });
 
   testWidgets('returns to home after inactivity timeout', (tester) async {

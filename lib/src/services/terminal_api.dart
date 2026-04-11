@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:http/http.dart' as http;
 
+import '../models/client_authentication.dart';
 import '../models/terminal_context.dart';
 import '../models/terminal_visual_identity.dart';
 
@@ -15,6 +16,9 @@ typedef VisualIdentityLoader =
 
 typedef TerminalContextLoader =
     Future<TerminalContext> Function(String terminalName);
+
+typedef ClientAuthenticator =
+    Future<ClientAuthentication> Function(ClientCredentials credentials);
 
 Future<TerminalVisualIdentity> fetchTerminalVisualIdentity(
   String terminalName,
@@ -74,9 +78,48 @@ Future<TerminalContext> fetchTerminalContext(String terminalName) async {
   return TerminalContext.fromJson(context);
 }
 
+Future<ClientAuthentication> authenticateClientWithCpf(
+  ClientCredentials credentials,
+) async {
+  final uri = Uri.parse('$bffBaseUrl/client-token');
+  final response = await http.post(
+    uri,
+    headers: {'Accept': 'application/json', 'Content-Type': 'application/json'},
+    body: jsonEncode({
+      'cpf': credentials.cpf,
+      'password': credentials.password,
+      'birthDate': _toApiBirthDate(credentials.birthDate),
+    }),
+  );
+
+  if (response.statusCode < 200 || response.statusCode >= 300) {
+    throw Exception(
+      'BFF retornou HTTP ${response.statusCode}: ${_truncate(response.body)}',
+    );
+  }
+
+  final payload = jsonDecode(response.body);
+
+  if (payload is! Map<String, dynamic>) {
+    throw Exception('Resposta do BFF nao e um objeto JSON.');
+  }
+
+  return ClientAuthentication.fromJson(payload);
+}
+
 String _truncate(String value) {
   const maxLength = 300;
   return value.length <= maxLength
       ? value
       : '${value.substring(0, maxLength)}...';
+}
+
+String _toApiBirthDate(String value) {
+  final match = RegExp(r'^(\d{2})/(\d{2})/(\d{4})$').firstMatch(value);
+
+  if (match == null) {
+    return value;
+  }
+
+  return '${match.group(3)}-${match.group(2)}-${match.group(1)}';
 }
