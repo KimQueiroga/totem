@@ -1,6 +1,6 @@
 import 'dart:convert';
-import 'dart:typed_data';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 
@@ -72,17 +72,31 @@ Future<TerminalVisualIdentity> fetchTerminalVisualIdentity(
   final response = await http.get(uri, headers: {'Accept': 'application/json'});
 
   if (response.statusCode < 200 || response.statusCode >= 300) {
-    throw Exception('BFF retornou HTTP ${response.statusCode}');
+    throw Exception(
+      'BFF retornou HTTP ${response.statusCode}: ${_truncate(response.body)}',
+    );
   }
 
-  final payload = jsonDecode(response.body) as Map<String, dynamic>;
-  final identity = payload['identidadeVisual'] as Map<String, dynamic>?;
+  final payload = jsonDecode(response.body);
 
-  if (identity == null) {
+  if (payload is! Map<String, dynamic>) {
+    throw Exception('Resposta do BFF nao e um objeto JSON.');
+  }
+
+  final identity = payload['identidadeVisual'];
+
+  if (identity is! Map<String, dynamic>) {
     throw Exception('Resposta sem identidadeVisual');
   }
 
   return TerminalVisualIdentity.fromJson(identity);
+}
+
+String _truncate(String value) {
+  const maxLength = 300;
+  return value.length <= maxLength
+      ? value
+      : '${value.substring(0, maxLength)}...';
 }
 
 class TerminalVisualIdentity {
@@ -118,9 +132,9 @@ class TerminalVisualIdentity {
       return null;
     }
 
-    final value = logoBase64.contains(',')
-        ? logoBase64.split(',').last
-        : logoBase64;
+    final value =
+        (logoBase64.contains(',') ? logoBase64.split(',').last : logoBase64)
+            .replaceAll(RegExp(r'\s+'), '');
 
     try {
       return base64Decode(value);
@@ -190,7 +204,10 @@ class _HomePageState extends State<HomePage> {
 
         if (snapshot.hasError || !snapshot.hasData) {
           return _PageScaffold(
-            child: _TerminalErrorContent(terminalName: terminalName),
+            child: _TerminalErrorContent(
+              terminalName: terminalName,
+              error: snapshot.error,
+            ),
           );
         }
 
@@ -277,9 +294,10 @@ class _TerminalNotFoundContent extends StatelessWidget {
 }
 
 class _TerminalErrorContent extends StatelessWidget {
-  const _TerminalErrorContent({required this.terminalName});
+  const _TerminalErrorContent({required this.terminalName, this.error});
 
   final String terminalName;
+  final Object? error;
 
   @override
   Widget build(BuildContext context) {
@@ -305,6 +323,16 @@ class _TerminalErrorContent extends StatelessWidget {
           textAlign: TextAlign.center,
           style: Theme.of(context).textTheme.titleLarge,
         ),
+        if (kDebugMode && error != null) ...[
+          const SizedBox(height: 24),
+          SelectableText(
+            error.toString(),
+            textAlign: TextAlign.center,
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+              color: Theme.of(context).colorScheme.error,
+            ),
+          ),
+        ],
       ],
     );
   }
@@ -330,7 +358,18 @@ class _TerminalHomeContent extends StatelessWidget {
       mainAxisSize: MainAxisSize.min,
       children: [
         if (logoBytes != null)
-          Image.memory(logoBytes, height: 112, fit: BoxFit.contain)
+          Image.memory(
+            logoBytes,
+            height: 112,
+            fit: BoxFit.contain,
+            errorBuilder: (context, error, stackTrace) {
+              return Icon(
+                Icons.local_hospital_outlined,
+                size: 88,
+                color: primaryColor,
+              );
+            },
+          )
         else
           Icon(Icons.local_hospital_outlined, size: 88, color: primaryColor),
         const SizedBox(height: 32),
