@@ -355,7 +355,11 @@ class _CpfIdentificationContentState extends State<CpfIdentificationContent> {
       return Center(child: keyboard);
     }
 
-    return SizedBox(width: 360, child: keyboard);
+    final width = _activeField == _CpfIdentificationField.password
+        ? 560.0
+        : 360.0;
+
+    return SizedBox(width: width, child: keyboard);
   }
 
   Widget _buildActionButtons(Color primaryColor, Color buttonColor) {

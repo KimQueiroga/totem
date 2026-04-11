@@ -219,6 +219,9 @@ class _KeyboardButton extends StatelessWidget {
         style: OutlinedButton.styleFrom(
           backgroundColor: isSecondary ? Colors.white : color,
           foregroundColor: foregroundColor,
+          minimumSize: Size.zero,
+          padding: EdgeInsets.zero,
+          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
           side: BorderSide(color: color),
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
         ),
@@ -226,9 +229,13 @@ class _KeyboardButton extends StatelessWidget {
         child: icon == null
             ? Text(
                 label!,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                textAlign: TextAlign.center,
                 style: Theme.of(context).textTheme.titleLarge?.copyWith(
                   color: foregroundColor,
                   fontWeight: FontWeight.w800,
+                  fontSize: label!.length > 1 ? 18 : 22,
                 ),
               )
             : Icon(icon, color: foregroundColor),
