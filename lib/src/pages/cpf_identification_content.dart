@@ -32,7 +32,7 @@ class _CpfIdentificationContentState extends State<CpfIdentificationContent> {
   final _birthDateController = TextEditingController();
   final _passwordController = TextEditingController();
   _CpfIdentificationField _activeField = _CpfIdentificationField.cpf;
-  bool _isKeyboardVisible = true;
+  bool _isKeyboardVisible = false;
 
   @override
   void dispose() {
@@ -166,6 +166,7 @@ class _CpfIdentificationContentState extends State<CpfIdentificationContent> {
     final primaryColor =
         widget.identity.primaryColor ?? Theme.of(context).colorScheme.primary;
     final buttonColor = widget.identity.buttonColor ?? primaryColor;
+    final useSideKeyboard = _useSideKeyboard(context);
 
     return SizedBox(
       height: _pageHeight(context),
@@ -193,7 +194,10 @@ class _CpfIdentificationContentState extends State<CpfIdentificationContent> {
                   ),
                 ),
                 const SizedBox(height: 32),
-                Center(
+                Align(
+                  alignment: useSideKeyboard && _isKeyboardVisible
+                      ? Alignment.centerLeft
+                      : Alignment.center,
                   child: ConstrainedBox(
                     constraints: const BoxConstraints(maxWidth: 420),
                     child: Form(
@@ -278,23 +282,11 @@ class _CpfIdentificationContentState extends State<CpfIdentificationContent> {
           ),
           if (_isKeyboardVisible)
             Positioned(
-              left: 0,
+              left: useSideKeyboard ? null : 0,
               right: 0,
-              bottom: 0,
-              child: Center(
-                child: NumericTouchKeyboard(
-                  color: buttonColor,
-                  activeFieldLabel: _activeField.label,
-                  nextLabel: _activeField == _CpfIdentificationField.password
-                      ? 'Concluir'
-                      : 'Proximo',
-                  onDigit: _appendDigit,
-                  onBackspace: _backspace,
-                  onClear: _clearActiveField,
-                  onNext: _goToNextField,
-                  onClose: _closeKeyboard,
-                ),
-              ),
+              top: useSideKeyboard ? 132 : null,
+              bottom: useSideKeyboard ? null : 0,
+              child: _buildKeyboard(buttonColor, useSideKeyboard),
             ),
           if (!_isKeyboardVisible)
             Positioned(
@@ -317,6 +309,34 @@ class _CpfIdentificationContentState extends State<CpfIdentificationContent> {
         64;
 
     return height < 520 ? 520 : height;
+  }
+
+  bool _useSideKeyboard(BuildContext context) {
+    return MediaQuery.sizeOf(context).width >= 900;
+  }
+
+  Widget _buildKeyboard(Color buttonColor, bool useSideKeyboard) {
+    final keyboard = NumericTouchKeyboard(
+      color: buttonColor,
+      activeFieldLabel: _activeField.label,
+      nextLabel: _activeField == _CpfIdentificationField.password
+          ? 'Concluir'
+          : 'Proximo',
+      borderRadius: useSideKeyboard
+          ? BorderRadius.circular(8)
+          : const BorderRadius.vertical(top: Radius.circular(8)),
+      onDigit: _appendDigit,
+      onBackspace: _backspace,
+      onClear: _clearActiveField,
+      onNext: _goToNextField,
+      onClose: _closeKeyboard,
+    );
+
+    if (!useSideKeyboard) {
+      return Center(child: keyboard);
+    }
+
+    return SizedBox(width: 360, child: keyboard);
   }
 
   Widget _buildActionButtons(Color primaryColor, Color buttonColor) {
@@ -374,7 +394,7 @@ class _CpfIdentificationContentState extends State<CpfIdentificationContent> {
   }) {
     final primaryColor =
         widget.identity.primaryColor ?? Theme.of(context).colorScheme.primary;
-    final isActive = field == _activeField;
+    final isActive = _isKeyboardVisible && field == _activeField;
 
     return InputDecoration(
       labelText: label,

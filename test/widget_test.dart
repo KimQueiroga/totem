@@ -184,7 +184,9 @@ void main() {
     expect(find.text('Data de nascimento'), findsOneWidget);
     expect(find.text('Senha'), findsOneWidget);
     expect(find.text('Esqueci minha senha'), findsOneWidget);
+    expect(find.byKey(const ValueKey('numeric-touch-key-next')), findsNothing);
 
+    await _tapTextFormField(tester, 'CPF');
     await _tapKeyboardDigits(tester, '12345678901');
     await _tapKeyboardNext(tester);
     await _tapKeyboardDigits(tester, '01012000');
@@ -248,6 +250,14 @@ void main() {
 
     expect(find.text('Terminal nao informado'), findsOneWidget);
   });
+}
+
+Future<void> _tapTextFormField(WidgetTester tester, String label) async {
+  final field = find.widgetWithText(TextFormField, label);
+
+  await tester.ensureVisible(field);
+  await tester.tap(field);
+  await tester.pump();
 }
 
 Future<void> _tapKeyboardDigits(WidgetTester tester, String digits) async {

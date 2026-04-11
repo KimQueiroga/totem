@@ -11,6 +11,7 @@ class NumericTouchKeyboard extends StatelessWidget {
     required this.color,
     required this.activeFieldLabel,
     this.nextLabel = 'Proximo',
+    this.borderRadius = const BorderRadius.vertical(top: Radius.circular(8)),
   });
 
   final ValueChanged<String> onDigit;
@@ -21,13 +22,14 @@ class NumericTouchKeyboard extends StatelessWidget {
   final Color color;
   final String activeFieldLabel;
   final String nextLabel;
+  final BorderRadiusGeometry borderRadius;
 
   @override
   Widget build(BuildContext context) {
     return Material(
       elevation: 18,
       color: Colors.white,
-      borderRadius: const BorderRadius.vertical(top: Radius.circular(8)),
+      borderRadius: borderRadius,
       child: SafeArea(
         top: false,
         child: Padding(
@@ -49,11 +51,22 @@ class NumericTouchKeyboard extends StatelessWidget {
                             ),
                       ),
                     ),
-                    TextButton(
+                    FilledButton.icon(
                       key: const ValueKey('numeric-touch-key-next'),
                       onPressed: onNext,
-                      style: TextButton.styleFrom(foregroundColor: color),
-                      child: Text(nextLabel),
+                      style: FilledButton.styleFrom(
+                        backgroundColor: color,
+                        foregroundColor: Colors.white,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                      ),
+                      icon: Icon(
+                        nextLabel == 'Concluir'
+                            ? Icons.check
+                            : Icons.arrow_forward,
+                      ),
+                      label: Text(nextLabel),
                     ),
                     IconButton(
                       key: const ValueKey('numeric-touch-key-close'),
