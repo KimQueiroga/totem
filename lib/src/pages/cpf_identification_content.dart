@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
-
 import '../models/terminal_visual_identity.dart';
 import '../widgets/flow_top_bar.dart';
+import '../widgets/numeric_touch_keyboard.dart';
 
 class CpfIdentificationContent extends StatefulWidget {
   const CpfIdentificationContent({
@@ -32,6 +31,7 @@ class _CpfIdentificationContentState extends State<CpfIdentificationContent> {
   final _cpfController = TextEditingController();
   final _birthDateController = TextEditingController();
   final _passwordController = TextEditingController();
+  _CpfIdentificationField _activeField = _CpfIdentificationField.cpf;
 
   @override
   void dispose() {
@@ -52,6 +52,92 @@ class _CpfIdentificationContentState extends State<CpfIdentificationContent> {
         birthDate: _birthDateController.text,
         password: _passwordController.text,
       ),
+    );
+  }
+
+  void _setActiveField(_CpfIdentificationField field) {
+    setState(() {
+      _activeField = field;
+    });
+  }
+
+  void _appendDigit(String digit) {
+    switch (_activeField) {
+      case _CpfIdentificationField.cpf:
+        _setFormattedDigits(
+          controller: _cpfController,
+          digit: digit,
+          maxLength: 11,
+          formatter: _formatCpf,
+        );
+      case _CpfIdentificationField.birthDate:
+        _setFormattedDigits(
+          controller: _birthDateController,
+          digit: digit,
+          maxLength: 8,
+          formatter: _formatDate,
+        );
+      case _CpfIdentificationField.password:
+        _setFormattedDigits(
+          controller: _passwordController,
+          digit: digit,
+          maxLength: 20,
+          formatter: (digits) => digits,
+        );
+    }
+  }
+
+  void _backspace() {
+    final controller = _activeController;
+    final digits = _digitsOnly(controller.text);
+
+    if (digits.isEmpty) {
+      return;
+    }
+
+    final nextValue = digits.substring(0, digits.length - 1);
+    _setControllerText(controller, _formatActiveField(nextValue));
+  }
+
+  void _clearActiveField() {
+    _setControllerText(_activeController, '');
+  }
+
+  TextEditingController get _activeController {
+    return switch (_activeField) {
+      _CpfIdentificationField.cpf => _cpfController,
+      _CpfIdentificationField.birthDate => _birthDateController,
+      _CpfIdentificationField.password => _passwordController,
+    };
+  }
+
+  String _formatActiveField(String digits) {
+    return switch (_activeField) {
+      _CpfIdentificationField.cpf => _formatCpf(digits),
+      _CpfIdentificationField.birthDate => _formatDate(digits),
+      _CpfIdentificationField.password => digits,
+    };
+  }
+
+  void _setFormattedDigits({
+    required TextEditingController controller,
+    required String digit,
+    required int maxLength,
+    required String Function(String digits) formatter,
+  }) {
+    final digits = _digitsOnly(controller.text);
+
+    if (digits.length >= maxLength) {
+      return;
+    }
+
+    _setControllerText(controller, formatter('$digits$digit'));
+  }
+
+  void _setControllerText(TextEditingController controller, String text) {
+    controller.value = TextEditingValue(
+      text: text,
+      selection: TextSelection.collapsed(offset: text.length),
     );
   }
 
@@ -91,13 +177,14 @@ class _CpfIdentificationContentState extends State<CpfIdentificationContent> {
                 children: [
                   TextFormField(
                     controller: _cpfController,
-                    decoration: const InputDecoration(labelText: 'CPF'),
+                    readOnly: true,
+                    showCursor: true,
+                    onTap: () => _setActiveField(_CpfIdentificationField.cpf),
+                    decoration: _inputDecoration(
+                      label: 'CPF',
+                      field: _CpfIdentificationField.cpf,
+                    ),
                     keyboardType: TextInputType.number,
-                    inputFormatters: [
-                      FilteringTextInputFormatter.digitsOnly,
-                      LengthLimitingTextInputFormatter(11),
-                      _CpfInputFormatter(),
-                    ],
                     validator: (value) {
                       return _digitsOnly(value ?? '').length == 11
                           ? null
@@ -107,16 +194,16 @@ class _CpfIdentificationContentState extends State<CpfIdentificationContent> {
                   const SizedBox(height: 20),
                   TextFormField(
                     controller: _birthDateController,
-                    decoration: const InputDecoration(
-                      labelText: 'Data de nascimento',
-                      hintText: 'DD/MM/AAAA',
+                    readOnly: true,
+                    showCursor: true,
+                    onTap: () =>
+                        _setActiveField(_CpfIdentificationField.birthDate),
+                    decoration: _inputDecoration(
+                      label: 'Data de nascimento',
+                      field: _CpfIdentificationField.birthDate,
+                      hint: 'DD/MM/AAAA',
                     ),
                     keyboardType: TextInputType.number,
-                    inputFormatters: [
-                      FilteringTextInputFormatter.digitsOnly,
-                      LengthLimitingTextInputFormatter(8),
-                      _DateInputFormatter(),
-                    ],
                     validator: (value) {
                       return _digitsOnly(value ?? '').length == 8
                           ? null
@@ -126,7 +213,14 @@ class _CpfIdentificationContentState extends State<CpfIdentificationContent> {
                   const SizedBox(height: 20),
                   TextFormField(
                     controller: _passwordController,
-                    decoration: const InputDecoration(labelText: 'Senha'),
+                    readOnly: true,
+                    showCursor: true,
+                    onTap: () =>
+                        _setActiveField(_CpfIdentificationField.password),
+                    decoration: _inputDecoration(
+                      label: 'Senha',
+                      field: _CpfIdentificationField.password,
+                    ),
                     obscureText: true,
                     validator: (value) {
                       return (value ?? '').trim().isEmpty
@@ -145,7 +239,16 @@ class _CpfIdentificationContentState extends State<CpfIdentificationContent> {
             ),
           ),
         ),
-        const SizedBox(height: 96),
+        const SizedBox(height: 32),
+        Center(
+          child: NumericTouchKeyboard(
+            color: buttonColor,
+            onDigit: _appendDigit,
+            onBackspace: _backspace,
+            onClear: _clearActiveField,
+          ),
+        ),
+        const SizedBox(height: 48),
         LayoutBuilder(
           builder: (context, constraints) {
             final stackButtons = constraints.maxWidth < 640;
@@ -194,6 +297,31 @@ class _CpfIdentificationContentState extends State<CpfIdentificationContent> {
       ],
     );
   }
+
+  InputDecoration _inputDecoration({
+    required String label,
+    required _CpfIdentificationField field,
+    String? hint,
+  }) {
+    final primaryColor =
+        widget.identity.primaryColor ?? Theme.of(context).colorScheme.primary;
+    final isActive = field == _activeField;
+
+    return InputDecoration(
+      labelText: label,
+      hintText: hint,
+      helperText: isActive ? 'Digite usando o teclado na tela.' : null,
+      enabledBorder: OutlineInputBorder(
+        borderSide: BorderSide(color: isActive ? primaryColor : Colors.grey),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderSide: BorderSide(color: primaryColor, width: 2),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+    );
+  }
 }
 
 class CpfIdentificationData {
@@ -206,38 +334,6 @@ class CpfIdentificationData {
   final String cpf;
   final String birthDate;
   final String password;
-}
-
-class _CpfInputFormatter extends TextInputFormatter {
-  @override
-  TextEditingValue formatEditUpdate(
-    TextEditingValue oldValue,
-    TextEditingValue newValue,
-  ) {
-    return _format(newValue, _formatCpf);
-  }
-}
-
-class _DateInputFormatter extends TextInputFormatter {
-  @override
-  TextEditingValue formatEditUpdate(
-    TextEditingValue oldValue,
-    TextEditingValue newValue,
-  ) {
-    return _format(newValue, _formatDate);
-  }
-}
-
-TextEditingValue _format(
-  TextEditingValue value,
-  String Function(String digits) formatter,
-) {
-  final text = formatter(_digitsOnly(value.text));
-
-  return TextEditingValue(
-    text: text,
-    selection: TextSelection.collapsed(offset: text.length),
-  );
 }
 
 String _formatCpf(String digits) {
@@ -271,3 +367,5 @@ String _formatDate(String digits) {
 }
 
 String _digitsOnly(String value) => value.replaceAll(RegExp(r'\D'), '');
+
+enum _CpfIdentificationField { cpf, birthDate, password }
