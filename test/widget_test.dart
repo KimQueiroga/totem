@@ -46,6 +46,9 @@ void main() {
   });
 
   testWidgets('loads services after starting attendance', (tester) async {
+    await tester.binding.setSurfaceSize(const Size(1000, 900));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+
     await tester.pumpWidget(
       TotemApp(
         initialUri: Uri.parse('http://127.0.0.1:8080/terminal=ihpmgaimtotem1'),
@@ -87,6 +90,12 @@ void main() {
     expect(find.text('Selecione o servico'), findsOneWidget);
     expect(find.text('Pre Atendimento'), findsOneWidget);
     expect(find.text('Resultado'), findsOneWidget);
+
+    final firstPosition = tester.getTopLeft(find.text('Pre Atendimento'));
+    final secondPosition = tester.getTopLeft(find.text('Resultado'));
+
+    expect(firstPosition.dy, closeTo(secondPosition.dy, 1));
+    expect(secondPosition.dx, greaterThan(firstPosition.dx));
   });
 
   testWidgets('renders message when terminal is not in url', (tester) async {

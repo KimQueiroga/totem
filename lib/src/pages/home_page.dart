@@ -108,7 +108,9 @@ class _HomePageState extends State<HomePage> {
               }
 
               return PageScaffold(
+                alignment: Alignment.topCenter,
                 identity: identity,
+                maxWidth: 980,
                 child: ServiceSelectionContent(
                   terminalName: terminalName,
                   identity: identity,

@@ -2,7 +2,11 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 class TerminalErrorContent extends StatelessWidget {
-  const TerminalErrorContent({super.key, required this.terminalName, this.error});
+  const TerminalErrorContent({
+    super.key,
+    required this.terminalName,
+    this.error,
+  });
 
   final String terminalName;
   final Object? error;
