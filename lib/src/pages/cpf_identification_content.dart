@@ -32,6 +32,7 @@ class _CpfIdentificationContentState extends State<CpfIdentificationContent> {
   final _birthDateController = TextEditingController();
   final _passwordController = TextEditingController();
   _CpfIdentificationField _activeField = _CpfIdentificationField.cpf;
+  bool _isKeyboardVisible = true;
 
   @override
   void dispose() {
@@ -58,7 +59,25 @@ class _CpfIdentificationContentState extends State<CpfIdentificationContent> {
   void _setActiveField(_CpfIdentificationField field) {
     setState(() {
       _activeField = field;
+      _isKeyboardVisible = true;
     });
+  }
+
+  void _closeKeyboard() {
+    setState(() {
+      _isKeyboardVisible = false;
+    });
+  }
+
+  void _goToNextField() {
+    switch (_activeField) {
+      case _CpfIdentificationField.cpf:
+        _setActiveField(_CpfIdentificationField.birthDate);
+      case _CpfIdentificationField.birthDate:
+        _setActiveField(_CpfIdentificationField.password);
+      case _CpfIdentificationField.password:
+        _closeKeyboard();
+    }
   }
 
   void _appendDigit(String digit) {
@@ -148,153 +167,203 @@ class _CpfIdentificationContentState extends State<CpfIdentificationContent> {
         widget.identity.primaryColor ?? Theme.of(context).colorScheme.primary;
     final buttonColor = widget.identity.buttonColor ?? primaryColor;
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        FlowTopBar(
-          logoBytes: logoBytes,
-          primaryColor: primaryColor,
-          title: widget.flowTitle,
-          onBack: widget.onBack,
-          onHome: widget.onHome,
-        ),
-        const SizedBox(height: 36),
-        Text(
-          'Identificacao com CPF',
-          textAlign: TextAlign.center,
-          style: Theme.of(context).textTheme.displaySmall?.copyWith(
-            color: widget.identity.patientNameColor ?? primaryColor,
-            fontWeight: FontWeight.w700,
-          ),
-        ),
-        const SizedBox(height: 48),
-        Center(
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 420),
-            child: Form(
-              key: _formKey,
-              child: Column(
-                children: [
-                  TextFormField(
-                    controller: _cpfController,
-                    readOnly: true,
-                    showCursor: true,
-                    onTap: () => _setActiveField(_CpfIdentificationField.cpf),
-                    decoration: _inputDecoration(
-                      label: 'CPF',
-                      field: _CpfIdentificationField.cpf,
+    return SizedBox(
+      height: _pageHeight(context),
+      child: Stack(
+        clipBehavior: Clip.none,
+        children: [
+          Positioned.fill(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                FlowTopBar(
+                  logoBytes: logoBytes,
+                  primaryColor: primaryColor,
+                  title: widget.flowTitle,
+                  onBack: widget.onBack,
+                  onHome: widget.onHome,
+                ),
+                const SizedBox(height: 24),
+                Text(
+                  'Identificacao com CPF',
+                  textAlign: TextAlign.center,
+                  style: Theme.of(context).textTheme.displaySmall?.copyWith(
+                    color: widget.identity.patientNameColor ?? primaryColor,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                const SizedBox(height: 32),
+                Center(
+                  child: ConstrainedBox(
+                    constraints: const BoxConstraints(maxWidth: 420),
+                    child: Form(
+                      key: _formKey,
+                      child: Column(
+                        children: [
+                          TextFormField(
+                            controller: _cpfController,
+                            readOnly: true,
+                            showCursor: true,
+                            canRequestFocus: false,
+                            onTap: () =>
+                                _setActiveField(_CpfIdentificationField.cpf),
+                            decoration: _inputDecoration(
+                              label: 'CPF',
+                              field: _CpfIdentificationField.cpf,
+                            ),
+                            keyboardType: TextInputType.number,
+                            validator: (value) {
+                              return _digitsOnly(value ?? '').length == 11
+                                  ? null
+                                  : 'Informe um CPF valido.';
+                            },
+                          ),
+                          const SizedBox(height: 20),
+                          TextFormField(
+                            controller: _birthDateController,
+                            readOnly: true,
+                            showCursor: true,
+                            canRequestFocus: false,
+                            onTap: () => _setActiveField(
+                              _CpfIdentificationField.birthDate,
+                            ),
+                            decoration: _inputDecoration(
+                              label: 'Data de nascimento',
+                              field: _CpfIdentificationField.birthDate,
+                              hint: 'DD/MM/AAAA',
+                            ),
+                            keyboardType: TextInputType.number,
+                            validator: (value) {
+                              return _digitsOnly(value ?? '').length == 8
+                                  ? null
+                                  : 'Informe a data de nascimento.';
+                            },
+                          ),
+                          const SizedBox(height: 20),
+                          TextFormField(
+                            controller: _passwordController,
+                            readOnly: true,
+                            showCursor: true,
+                            canRequestFocus: false,
+                            onTap: () => _setActiveField(
+                              _CpfIdentificationField.password,
+                            ),
+                            decoration: _inputDecoration(
+                              label: 'Senha',
+                              field: _CpfIdentificationField.password,
+                            ),
+                            obscureText: true,
+                            validator: (value) {
+                              return (value ?? '').trim().isEmpty
+                                  ? 'Informe a senha.'
+                                  : null;
+                            },
+                          ),
+                          const SizedBox(height: 22),
+                          TextButton(
+                            onPressed: widget.onForgotPassword,
+                            style: TextButton.styleFrom(
+                              foregroundColor: primaryColor,
+                            ),
+                            child: const Text('Esqueci minha senha'),
+                          ),
+                        ],
+                      ),
                     ),
-                    keyboardType: TextInputType.number,
-                    validator: (value) {
-                      return _digitsOnly(value ?? '').length == 11
-                          ? null
-                          : 'Informe um CPF valido.';
-                    },
                   ),
-                  const SizedBox(height: 20),
-                  TextFormField(
-                    controller: _birthDateController,
-                    readOnly: true,
-                    showCursor: true,
-                    onTap: () =>
-                        _setActiveField(_CpfIdentificationField.birthDate),
-                    decoration: _inputDecoration(
-                      label: 'Data de nascimento',
-                      field: _CpfIdentificationField.birthDate,
-                      hint: 'DD/MM/AAAA',
-                    ),
-                    keyboardType: TextInputType.number,
-                    validator: (value) {
-                      return _digitsOnly(value ?? '').length == 8
-                          ? null
-                          : 'Informe a data de nascimento.';
-                    },
-                  ),
-                  const SizedBox(height: 20),
-                  TextFormField(
-                    controller: _passwordController,
-                    readOnly: true,
-                    showCursor: true,
-                    onTap: () =>
-                        _setActiveField(_CpfIdentificationField.password),
-                    decoration: _inputDecoration(
-                      label: 'Senha',
-                      field: _CpfIdentificationField.password,
-                    ),
-                    obscureText: true,
-                    validator: (value) {
-                      return (value ?? '').trim().isEmpty
-                          ? 'Informe a senha.'
-                          : null;
-                    },
-                  ),
-                  const SizedBox(height: 22),
-                  TextButton(
-                    onPressed: widget.onForgotPassword,
-                    style: TextButton.styleFrom(foregroundColor: primaryColor),
-                    child: const Text('Esqueci minha senha'),
-                  ),
-                ],
-              ),
+                ),
+                const Spacer(),
+              ],
             ),
           ),
-        ),
-        const SizedBox(height: 32),
-        Center(
-          child: NumericTouchKeyboard(
-            color: buttonColor,
-            onDigit: _appendDigit,
-            onBackspace: _backspace,
-            onClear: _clearActiveField,
+          if (_isKeyboardVisible)
+            Positioned(
+              left: 0,
+              right: 0,
+              bottom: 0,
+              child: Center(
+                child: NumericTouchKeyboard(
+                  color: buttonColor,
+                  activeFieldLabel: _activeField.label,
+                  nextLabel: _activeField == _CpfIdentificationField.password
+                      ? 'Concluir'
+                      : 'Proximo',
+                  onDigit: _appendDigit,
+                  onBackspace: _backspace,
+                  onClear: _clearActiveField,
+                  onNext: _goToNextField,
+                  onClose: _closeKeyboard,
+                ),
+              ),
+            ),
+          if (!_isKeyboardVisible)
+            Positioned(
+              left: 0,
+              right: 0,
+              bottom: 0,
+              child: _buildActionButtons(primaryColor, buttonColor),
+            ),
+        ],
+      ),
+    );
+  }
+
+  double _pageHeight(BuildContext context) {
+    final mediaQuery = MediaQuery.of(context);
+    final height =
+        mediaQuery.size.height -
+        mediaQuery.padding.top -
+        mediaQuery.padding.bottom -
+        64;
+
+    return height < 520 ? 520 : height;
+  }
+
+  Widget _buildActionButtons(Color primaryColor, Color buttonColor) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final stackButtons = constraints.maxWidth < 640;
+        final cancelButton = OutlinedButton(
+          style: OutlinedButton.styleFrom(
+            foregroundColor: primaryColor,
+            side: BorderSide(color: primaryColor),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(8),
+            ),
           ),
-        ),
-        const SizedBox(height: 48),
-        LayoutBuilder(
-          builder: (context, constraints) {
-            final stackButtons = constraints.maxWidth < 640;
-            final cancelButton = OutlinedButton(
-              style: OutlinedButton.styleFrom(
-                foregroundColor: primaryColor,
-                side: BorderSide(color: primaryColor),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
-                ),
-              ),
-              onPressed: widget.onBack,
-              child: const Text('Cancelar'),
-            );
-            final submitButton = FilledButton(
-              style: FilledButton.styleFrom(
-                backgroundColor: buttonColor,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
-                ),
-              ),
-              onPressed: _submit,
-              child: const Text('Entrar'),
-            );
+          onPressed: widget.onBack,
+          child: const Text('Cancelar'),
+        );
+        final submitButton = FilledButton(
+          style: FilledButton.styleFrom(
+            backgroundColor: buttonColor,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(8),
+            ),
+          ),
+          onPressed: _submit,
+          child: const Text('Entrar'),
+        );
 
-            if (stackButtons) {
-              return Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  SizedBox(height: 64, child: submitButton),
-                  const SizedBox(height: 16),
-                  SizedBox(height: 64, child: cancelButton),
-                ],
-              );
-            }
+        if (stackButtons) {
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              SizedBox(height: 64, child: submitButton),
+              const SizedBox(height: 16),
+              SizedBox(height: 64, child: cancelButton),
+            ],
+          );
+        }
 
-            return Row(
-              children: [
-                Expanded(child: SizedBox(height: 64, child: cancelButton)),
-                const SizedBox(width: 48),
-                Expanded(child: SizedBox(height: 64, child: submitButton)),
-              ],
-            );
-          },
-        ),
-      ],
+        return Row(
+          children: [
+            Expanded(child: SizedBox(height: 64, child: cancelButton)),
+            const SizedBox(width: 48),
+            Expanded(child: SizedBox(height: 64, child: submitButton)),
+          ],
+        );
+      },
     );
   }
 
@@ -369,3 +438,13 @@ String _formatDate(String digits) {
 String _digitsOnly(String value) => value.replaceAll(RegExp(r'\D'), '');
 
 enum _CpfIdentificationField { cpf, birthDate, password }
+
+extension on _CpfIdentificationField {
+  String get label {
+    return switch (this) {
+      _CpfIdentificationField.cpf => 'CPF',
+      _CpfIdentificationField.birthDate => 'Data de nascimento',
+      _CpfIdentificationField.password => 'Senha',
+    };
+  }
+}

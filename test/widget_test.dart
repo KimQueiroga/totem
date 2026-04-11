@@ -186,10 +186,11 @@ void main() {
     expect(find.text('Esqueci minha senha'), findsOneWidget);
 
     await _tapKeyboardDigits(tester, '12345678901');
-    await _tapTextFormField(tester, 'Data de nascimento');
+    await _tapKeyboardNext(tester);
     await _tapKeyboardDigits(tester, '01012000');
-    await _tapTextFormField(tester, 'Senha');
+    await _tapKeyboardNext(tester);
     await _tapKeyboardDigits(tester, '1234');
+    await _tapKeyboardNext(tester);
     await tester.ensureVisible(find.text('Entrar'));
     await tester.tap(find.text('Entrar'));
     await tester.pump();
@@ -249,14 +250,6 @@ void main() {
   });
 }
 
-Future<void> _tapTextFormField(WidgetTester tester, String label) async {
-  final field = find.widgetWithText(TextFormField, label);
-
-  await tester.ensureVisible(field);
-  await tester.tap(field);
-  await tester.pump();
-}
-
 Future<void> _tapKeyboardDigits(WidgetTester tester, String digits) async {
   for (final digit in digits.split('')) {
     final key = find.byKey(ValueKey('numeric-touch-key-$digit'));
@@ -265,4 +258,11 @@ Future<void> _tapKeyboardDigits(WidgetTester tester, String digits) async {
     await tester.tap(key);
     await tester.pump();
   }
+}
+
+Future<void> _tapKeyboardNext(WidgetTester tester) async {
+  final key = find.byKey(const ValueKey('numeric-touch-key-next'));
+
+  await tester.tap(key);
+  await tester.pump();
 }
