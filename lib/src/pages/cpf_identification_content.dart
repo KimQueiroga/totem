@@ -33,6 +33,7 @@ class _CpfIdentificationContentState extends State<CpfIdentificationContent> {
   final _passwordController = TextEditingController();
   _CpfIdentificationField _activeField = _CpfIdentificationField.cpf;
   bool _isKeyboardVisible = false;
+  bool _isPasswordUpperCase = false;
 
   @override
   void dispose() {
@@ -97,24 +98,37 @@ class _CpfIdentificationContentState extends State<CpfIdentificationContent> {
           formatter: _formatDate,
         );
       case _CpfIdentificationField.password:
-        _setFormattedDigits(
-          controller: _passwordController,
-          digit: digit,
-          maxLength: 20,
-          formatter: (digits) => digits,
-        );
+        _appendPasswordCharacter(digit);
     }
+  }
+
+  void _appendPasswordCharacter(String value) {
+    final text = _passwordController.text;
+
+    if (text.length >= 20) {
+      return;
+    }
+
+    _setControllerText(_passwordController, '$text$value');
+  }
+
+  void _togglePasswordCase() {
+    setState(() {
+      _isPasswordUpperCase = !_isPasswordUpperCase;
+    });
   }
 
   void _backspace() {
     final controller = _activeController;
-    final digits = _digitsOnly(controller.text);
+    final value = _activeField == _CpfIdentificationField.password
+        ? controller.text
+        : _digitsOnly(controller.text);
 
-    if (digits.isEmpty) {
+    if (value.isEmpty) {
       return;
     }
 
-    final nextValue = digits.substring(0, digits.length - 1);
+    final nextValue = value.substring(0, value.length - 1);
     _setControllerText(controller, _formatActiveField(nextValue));
   }
 
@@ -322,6 +336,11 @@ class _CpfIdentificationContentState extends State<CpfIdentificationContent> {
       nextLabel: _activeField == _CpfIdentificationField.password
           ? 'Concluir'
           : 'Proximo',
+      layout: _activeField == _CpfIdentificationField.password
+          ? TouchKeyboardLayout.alphanumeric
+          : TouchKeyboardLayout.numeric,
+      isUpperCase: _isPasswordUpperCase,
+      onToggleLetterCase: _togglePasswordCase,
       borderRadius: useSideKeyboard
           ? BorderRadius.circular(8)
           : const BorderRadius.vertical(top: Radius.circular(8)),

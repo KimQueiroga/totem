@@ -191,7 +191,8 @@ void main() {
     await _tapKeyboardNext(tester);
     await _tapKeyboardDigits(tester, '01012000');
     await _tapKeyboardNext(tester);
-    await _tapKeyboardDigits(tester, '1234');
+    expect(find.byKey(const ValueKey('numeric-touch-key-a')), findsOneWidget);
+    await _tapKeyboardKeys(tester, 'a1b2');
     await _tapKeyboardNext(tester);
     await tester.ensureVisible(find.text('Entrar'));
     await tester.tap(find.text('Entrar'));
@@ -261,8 +262,12 @@ Future<void> _tapTextFormField(WidgetTester tester, String label) async {
 }
 
 Future<void> _tapKeyboardDigits(WidgetTester tester, String digits) async {
-  for (final digit in digits.split('')) {
-    final key = find.byKey(ValueKey('numeric-touch-key-$digit'));
+  await _tapKeyboardKeys(tester, digits);
+}
+
+Future<void> _tapKeyboardKeys(WidgetTester tester, String values) async {
+  for (final value in values.split('')) {
+    final key = find.byKey(ValueKey('numeric-touch-key-$value'));
 
     await tester.ensureVisible(key);
     await tester.tap(key);

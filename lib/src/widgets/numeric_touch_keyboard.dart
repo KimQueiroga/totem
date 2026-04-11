@@ -12,6 +12,9 @@ class NumericTouchKeyboard extends StatelessWidget {
     required this.activeFieldLabel,
     this.nextLabel = 'Proximo',
     this.borderRadius = const BorderRadius.vertical(top: Radius.circular(8)),
+    this.layout = TouchKeyboardLayout.numeric,
+    this.isUpperCase = false,
+    this.onToggleLetterCase,
   });
 
   final ValueChanged<String> onDigit;
@@ -23,6 +26,9 @@ class NumericTouchKeyboard extends StatelessWidget {
   final String activeFieldLabel;
   final String nextLabel;
   final BorderRadiusGeometry borderRadius;
+  final TouchKeyboardLayout layout;
+  final bool isUpperCase;
+  final VoidCallback? onToggleLetterCase;
 
   @override
   Widget build(BuildContext context) {
@@ -77,11 +83,7 @@ class NumericTouchKeyboard extends StatelessWidget {
                   ],
                 ),
                 const SizedBox(height: 8),
-                for (final row in const [
-                  ['1', '2', '3'],
-                  ['4', '5', '6'],
-                  ['7', '8', '9'],
-                ])
+                for (final row in _rows)
                   Padding(
                     padding: const EdgeInsets.only(bottom: 8),
                     child: Row(
@@ -102,24 +104,9 @@ class NumericTouchKeyboard extends StatelessWidget {
                   ),
                 Row(
                   children: [
-                    Expanded(
-                      child: _KeyboardButton(
-                        key: const ValueKey('numeric-touch-key-clear'),
-                        label: 'Limpar',
-                        color: color,
-                        isSecondary: true,
-                        onPressed: onClear,
-                      ),
-                    ),
+                    Expanded(child: _firstActionButton),
                     const SizedBox(width: 8),
-                    Expanded(
-                      child: _KeyboardButton(
-                        key: const ValueKey('numeric-touch-key-0'),
-                        label: '0',
-                        color: color,
-                        onPressed: () => onDigit('0'),
-                      ),
-                    ),
+                    Expanded(child: _secondActionButton),
                     const SizedBox(width: 8),
                     Expanded(
                       child: _KeyboardButton(
@@ -139,7 +126,72 @@ class NumericTouchKeyboard extends StatelessWidget {
       ),
     );
   }
+
+  List<List<String>> get _rows {
+    return switch (layout) {
+      TouchKeyboardLayout.numeric => const [
+        ['1', '2', '3'],
+        ['4', '5', '6'],
+        ['7', '8', '9'],
+      ],
+      TouchKeyboardLayout.alphanumeric => [
+        '1234567890'.split(''),
+        _letters('qwertyuiop'),
+        _letters('asdfghjkl'),
+        _letters('zxcvbnm'),
+      ],
+    };
+  }
+
+  Widget get _firstActionButton {
+    if (layout == TouchKeyboardLayout.alphanumeric) {
+      return _KeyboardButton(
+        key: const ValueKey('numeric-touch-key-case'),
+        label: isUpperCase ? 'abc' : 'ABC',
+        color: color,
+        isSecondary: true,
+        onPressed: onToggleLetterCase ?? () {},
+      );
+    }
+
+    return _KeyboardButton(
+      key: const ValueKey('numeric-touch-key-clear'),
+      label: 'Limpar',
+      color: color,
+      isSecondary: true,
+      onPressed: onClear,
+    );
+  }
+
+  Widget get _secondActionButton {
+    if (layout == TouchKeyboardLayout.alphanumeric) {
+      return _KeyboardButton(
+        key: const ValueKey('numeric-touch-key-clear'),
+        label: 'Limpar',
+        color: color,
+        isSecondary: true,
+        onPressed: onClear,
+      );
+    }
+
+    return _KeyboardButton(
+      key: const ValueKey('numeric-touch-key-0'),
+      label: '0',
+      color: color,
+      onPressed: () => onDigit('0'),
+    );
+  }
+
+  List<String> _letters(String row) {
+    final values = row.split('');
+
+    return isUpperCase
+        ? values.map((value) => value.toUpperCase()).toList()
+        : values;
+  }
 }
+
+enum TouchKeyboardLayout { numeric, alphanumeric }
 
 class _KeyboardButton extends StatelessWidget {
   const _KeyboardButton({
