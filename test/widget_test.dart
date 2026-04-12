@@ -252,6 +252,25 @@ void main() {
     expect(find.text('Confirme seus dados'), findsOneWidget);
     expect(find.text('FAKE BEN DEX I O\'NEAL'), findsOneWidget);
     expect(find.text('ben.oneal@pardini.com.br'), findsOneWidget);
+    expect(find.byKey(const ValueKey('numeric-touch-key-next')), findsNothing);
+
+    await _tapTextFormField(tester, 'Nome');
+    expect(find.byKey(const ValueKey('numeric-touch-key-next')), findsNothing);
+
+    await _tapTextFormField(tester, 'E-mail');
+    expect(find.byKey(const ValueKey('numeric-touch-key-a')), findsOneWidget);
+    expect(find.byKey(const ValueKey('numeric-touch-key-space')), findsNothing);
+
+    await _tapKeyboardNext(tester);
+    expect(find.byKey(const ValueKey('numeric-touch-key-a')), findsNothing);
+    expect(find.byKey(const ValueKey('numeric-touch-key-1')), findsOneWidget);
+
+    await _tapKeyboardNext(tester);
+    await _tapKeyboardNext(tester);
+    expect(
+      find.byKey(const ValueKey('numeric-touch-key-space')),
+      findsOneWidget,
+    );
   });
 
   testWidgets('returns to home after inactivity timeout', (tester) async {

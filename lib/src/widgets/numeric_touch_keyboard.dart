@@ -14,6 +14,7 @@ class NumericTouchKeyboard extends StatelessWidget {
     this.borderRadius = const BorderRadius.vertical(top: Radius.circular(8)),
     this.layout = TouchKeyboardLayout.numeric,
     this.isUpperCase = false,
+    this.includeSpace = false,
     this.onToggleLetterCase,
   });
 
@@ -28,10 +29,13 @@ class NumericTouchKeyboard extends StatelessWidget {
   final BorderRadiusGeometry borderRadius;
   final TouchKeyboardLayout layout;
   final bool isUpperCase;
+  final bool includeSpace;
   final VoidCallback? onToggleLetterCase;
 
   @override
   Widget build(BuildContext context) {
+    final actionButtons = _actionButtons;
+
     return Material(
       elevation: 18,
       color: Colors.white,
@@ -104,19 +108,11 @@ class NumericTouchKeyboard extends StatelessWidget {
                   ),
                 Row(
                   children: [
-                    Expanded(child: _firstActionButton),
-                    const SizedBox(width: 8),
-                    Expanded(child: _secondActionButton),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: _KeyboardButton(
-                        key: const ValueKey('numeric-touch-key-backspace'),
-                        icon: Icons.backspace_outlined,
-                        color: color,
-                        isSecondary: true,
-                        onPressed: onBackspace,
-                      ),
-                    ),
+                    for (final button in actionButtons) ...[
+                      Expanded(child: button),
+                      if (button != actionButtons.last)
+                        const SizedBox(width: 8),
+                    ],
                   ],
                 ),
               ],
@@ -139,48 +135,68 @@ class NumericTouchKeyboard extends StatelessWidget {
         _letters('qwertyuiop'),
         _letters('asdfghjkl'),
         _letters('zxcvbnm'),
-        const ['@', '#', '*', '?', '!', '-', '_', '.', '+'],
+        const ['@', '#', '*', '?', '!', '-', '_', '.', ',', '+'],
       ],
     };
   }
 
-  Widget get _firstActionButton {
+  List<Widget> get _actionButtons {
     if (layout == TouchKeyboardLayout.alphanumeric) {
-      return _KeyboardButton(
-        key: const ValueKey('numeric-touch-key-case'),
-        label: isUpperCase ? 'abc' : 'ABC',
-        color: color,
-        isSecondary: true,
-        onPressed: onToggleLetterCase ?? () {},
-      );
+      return [
+        _KeyboardButton(
+          key: const ValueKey('numeric-touch-key-case'),
+          label: isUpperCase ? 'abc' : 'ABC',
+          color: color,
+          isSecondary: true,
+          onPressed: onToggleLetterCase ?? () {},
+        ),
+        if (includeSpace)
+          _KeyboardButton(
+            key: const ValueKey('numeric-touch-key-space'),
+            label: 'Espaco',
+            color: color,
+            isSecondary: true,
+            onPressed: () => onDigit(' '),
+          ),
+        _KeyboardButton(
+          key: const ValueKey('numeric-touch-key-clear'),
+          label: 'Limpar',
+          color: color,
+          isSecondary: true,
+          onPressed: onClear,
+        ),
+        _KeyboardButton(
+          key: const ValueKey('numeric-touch-key-backspace'),
+          icon: Icons.backspace_outlined,
+          color: color,
+          isSecondary: true,
+          onPressed: onBackspace,
+        ),
+      ];
     }
 
-    return _KeyboardButton(
-      key: const ValueKey('numeric-touch-key-clear'),
-      label: 'Limpar',
-      color: color,
-      isSecondary: true,
-      onPressed: onClear,
-    );
-  }
-
-  Widget get _secondActionButton {
-    if (layout == TouchKeyboardLayout.alphanumeric) {
-      return _KeyboardButton(
+    return [
+      _KeyboardButton(
         key: const ValueKey('numeric-touch-key-clear'),
         label: 'Limpar',
         color: color,
         isSecondary: true,
         onPressed: onClear,
-      );
-    }
-
-    return _KeyboardButton(
-      key: const ValueKey('numeric-touch-key-0'),
-      label: '0',
-      color: color,
-      onPressed: () => onDigit('0'),
-    );
+      ),
+      _KeyboardButton(
+        key: const ValueKey('numeric-touch-key-0'),
+        label: '0',
+        color: color,
+        onPressed: () => onDigit('0'),
+      ),
+      _KeyboardButton(
+        key: const ValueKey('numeric-touch-key-backspace'),
+        icon: Icons.backspace_outlined,
+        color: color,
+        isSecondary: true,
+        onPressed: onBackspace,
+      ),
+    ];
   }
 
   List<String> _letters(String row) {
