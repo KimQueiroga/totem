@@ -23,7 +23,7 @@ class ClientConfirmationContent extends StatefulWidget {
   final VoidCallback onBack;
   final VoidCallback onHome;
   final VoidCallback onReject;
-  final VoidCallback onConfirm;
+  final ValueChanged<ClientProfileUpdate> onConfirm;
 
   @override
   State<ClientConfirmationContent> createState() =>
@@ -168,6 +168,20 @@ class _ClientConfirmationContentState extends State<ClientConfirmationContent> {
     controller.value = TextEditingValue(
       text: text,
       selection: TextSelection.collapsed(offset: text.length),
+    );
+  }
+
+  void _confirm() {
+    widget.onConfirm(
+      ClientProfileUpdate(
+        authentication: widget.authentication,
+        email: _emailController.text,
+        mobilePhoneNumber: _mobilePhoneController.text,
+        homePhoneNumber: _homePhoneController.text,
+        motherName: _motherNameController.text,
+        streetAndComplement: _addressController.text,
+        cityAndState: _cityController.text,
+      ),
     );
   }
 
@@ -414,7 +428,7 @@ class _ClientConfirmationContentState extends State<ClientConfirmationContent> {
               borderRadius: BorderRadius.circular(8),
             ),
           ),
-          onPressed: widget.onConfirm,
+          onPressed: _confirm,
           child: const Text('Sim'),
         );
 

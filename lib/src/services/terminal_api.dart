@@ -20,6 +20,9 @@ typedef TerminalContextLoader =
 typedef ClientAuthenticator =
     Future<ClientAuthentication> Function(ClientCredentials credentials);
 
+typedef ClientUpdater =
+    Future<void> Function(ClientProfileUpdate profileUpdate);
+
 Future<TerminalVisualIdentity> fetchTerminalVisualIdentity(
   String terminalName,
 ) async {
@@ -105,6 +108,27 @@ Future<ClientAuthentication> authenticateClientWithCpf(
   }
 
   return ClientAuthentication.fromJson(payload);
+}
+
+Future<void> updateClientProfile(ClientProfileUpdate profileUpdate) async {
+  if (profileUpdate.clientId.isEmpty) {
+    throw Exception('Resposta de autenticacao sem ID do cliente.');
+  }
+
+  final uri = Uri.parse(
+    '$bffBaseUrl/client',
+  ).replace(queryParameters: {'id': profileUpdate.clientId});
+  final response = await http.put(
+    uri,
+    headers: {'Accept': 'application/json', 'Content-Type': 'application/json'},
+    body: jsonEncode(profileUpdate.toJson()),
+  );
+
+  if (response.statusCode < 200 || response.statusCode >= 300) {
+    throw Exception(
+      'BFF retornou HTTP ${response.statusCode}: ${_truncate(response.body)}',
+    );
+  }
 }
 
 String _truncate(String value) {

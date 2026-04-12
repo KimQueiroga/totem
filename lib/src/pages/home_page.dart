@@ -22,6 +22,7 @@ class HomePage extends StatefulWidget {
     required this.loadVisualIdentity,
     required this.loadTerminalContext,
     required this.authenticateClient,
+    required this.updateClient,
   });
 
   final String? terminalName;
@@ -29,6 +30,7 @@ class HomePage extends StatefulWidget {
   final VisualIdentityLoader loadVisualIdentity;
   final TerminalContextLoader loadTerminalContext;
   final ClientAuthenticator authenticateClient;
+  final ClientUpdater updateClient;
 
   @override
   State<HomePage> createState() => _HomePageState();
@@ -149,6 +151,37 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
+  Future<void> _handleClientConfirmation(
+    ClientProfileUpdate profileUpdate,
+  ) async {
+    if (!profileUpdate.hasChanges) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Dados confirmados.')));
+      return;
+    }
+
+    try {
+      await widget.updateClient(profileUpdate);
+
+      if (!mounted) {
+        return;
+      }
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Dados atualizados com sucesso.')),
+      );
+    } catch (error) {
+      if (!mounted) {
+        return;
+      }
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Falha ao atualizar dados: $error')),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final terminalName = widget.terminalName;
@@ -242,13 +275,7 @@ class _HomePageState extends State<HomePage> {
                             onBack: _backToCpfIdentification,
                             onHome: _backToHome,
                             onReject: _backToCpfIdentification,
-                            onConfirm: () {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
-                                  content: Text('Dados confirmados.'),
-                                ),
-                              );
-                            },
+                            onConfirm: _handleClientConfirmation,
                           ),
                         );
                       },

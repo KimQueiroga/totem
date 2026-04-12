@@ -177,6 +177,8 @@ void main() {
   });
 
   testWidgets('opens CPF identification flow and submits form', (tester) async {
+    ClientProfileUpdate? submittedUpdate;
+
     await tester.pumpWidget(
       TotemApp(
         initialUri: Uri.parse('http://127.0.0.1:8080/terminal=ihpmgaimtotem1'),
@@ -206,6 +208,7 @@ void main() {
           id: '9614d1dc-22d7-d27e-8a05-252a65cdf2ea',
           millisecondsToExpire: 1200000,
           user: ClientUser(
+            clientId: '8035115166',
             fullName: 'FAKE BEN DEX I O\'NEAL',
             socialName: null,
             cpf: '12345678901',
@@ -219,6 +222,9 @@ void main() {
             uf: 'MG',
           ),
         ),
+        updateClient: (profileUpdate) async {
+          submittedUpdate = profileUpdate;
+        },
       ),
     );
 
@@ -260,6 +266,7 @@ void main() {
     await _tapTextFormField(tester, 'E-mail');
     expect(find.byKey(const ValueKey('numeric-touch-key-a')), findsOneWidget);
     expect(find.byKey(const ValueKey('numeric-touch-key-space')), findsNothing);
+    await _tapKeyboardKeys(tester, 'z');
 
     await _tapKeyboardNext(tester);
     expect(find.byKey(const ValueKey('numeric-touch-key-a')), findsNothing);
@@ -271,6 +278,16 @@ void main() {
       find.byKey(const ValueKey('numeric-touch-key-space')),
       findsOneWidget,
     );
+    await tester.tap(find.byKey(const ValueKey('numeric-touch-key-close')));
+    await tester.pumpAndSettle();
+    await tester.ensureVisible(find.text('Sim'));
+    await tester.tap(find.text('Sim'));
+    await tester.pumpAndSettle();
+
+    expect(submittedUpdate, isNotNull);
+    expect(submittedUpdate!.hasChanges, isTrue);
+    expect(submittedUpdate!.clientId, '8035115166');
+    expect(find.text('Dados atualizados com sucesso.'), findsOneWidget);
   });
 
   testWidgets('returns to home after inactivity timeout', (tester) async {
