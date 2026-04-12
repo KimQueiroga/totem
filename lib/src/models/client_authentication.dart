@@ -170,9 +170,9 @@ class ClientProfileUpdate {
       'cpf': user.cpf,
       'gender': user.gender ?? '',
       'birthDate': user.birthDate,
-      'disabled': 0,
-      'title': 0,
-      'socialTitle': 0,
+      'disabled': 1,
+      'title': 1,
+      'socialTitle': 1,
       'socialGender': 0,
       'address': {
         'street': addressStreet,
