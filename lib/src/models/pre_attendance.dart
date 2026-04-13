@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 class PreAttendanceQuery {
   const PreAttendanceQuery({
     required this.message,
@@ -22,6 +24,10 @@ class PreAttendanceQuery {
     );
   }
 
+  factory PreAttendanceQuery.fromResponseBody(String body) {
+    return PreAttendanceQuery.fromJson(_decodePreAttendanceBody(body));
+  }
+
   final String message;
   final String status;
   final List<PreAttendance> preAttendances;
@@ -33,6 +39,39 @@ class PreAttendanceQuery {
           guide.copyWith(preAttendanceNumber: preAttendance.number),
     ];
   }
+}
+
+Map<String, dynamic> _decodePreAttendanceBody(String body) {
+  try {
+    final payload = jsonDecode(body);
+
+    if (payload is Map<String, dynamic>) {
+      return payload;
+    }
+  } on FormatException {
+    final repairedBody = _repairPreAttendanceJson(body);
+    final payload = jsonDecode(repairedBody);
+
+    if (payload is Map<String, dynamic>) {
+      return payload;
+    }
+  }
+
+  throw Exception('Resposta do BFF nao e um objeto JSON.');
+}
+
+String _repairPreAttendanceJson(String body) {
+  final unquotedContactValue = RegExp(
+    r'("(?:telefone|celular)"\s*:\s*)(?!["{\[]|null\b|true\b|false\b)([^,}\]]*)',
+    caseSensitive: false,
+  );
+
+  return body.replaceAllMapped(unquotedContactValue, (match) {
+    final prefix = match.group(1)!;
+    final value = match.group(2)!.trim();
+
+    return '$prefix${value.isEmpty ? 'null' : jsonEncode(value)}';
+  });
 }
 
 class PreAttendance {

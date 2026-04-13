@@ -147,13 +147,7 @@ Future<PreAttendanceQuery> fetchPreAttendance(String clientId) async {
     );
   }
 
-  final payload = jsonDecode(response.body);
-
-  if (payload is! Map<String, dynamic>) {
-    throw Exception('Resposta do BFF nao e um objeto JSON.');
-  }
-
-  return PreAttendanceQuery.fromJson(payload);
+  return PreAttendanceQuery.fromResponseBody(response.body);
 }
 
 String _truncate(String value) {

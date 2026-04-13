@@ -56,6 +56,16 @@ void main() {
     expect(user.displayName, 'NOME CIVIL');
   });
 
+  test('parses pre attendance response with unquoted contact phone', () {
+    final query = PreAttendanceQuery.fromResponseBody(
+      '{"ConsultaResult":{"mensagem":"ok","status":"0","preAtendimentos":[{"numeroPreAtendimento":152912,"guias":[{"autorizacao":{"senha":4654652},"numeroGuiaOperadora":34534534,"solicitante":{"nome":"MARCO TULIO"},"exames":[]}],"paciente":{"codigo":61,"telefone":3131-3131}}]}}',
+    );
+
+    expect(query.status, '0');
+    expect(query.guides.single.operatorGuideNumber, '34534534');
+    expect(query.guides.single.authorizationPassword, '4654652');
+  });
+
   testWidgets('renders autoatendimento start screen from visual identity', (
     tester,
   ) async {
