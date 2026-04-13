@@ -227,84 +227,93 @@ class _ClientConfirmationContentState extends State<ClientConfirmationContent> {
     final user = widget.authentication.user;
     final useSideKeyboard = _useSideKeyboard(context);
 
-    return SizedBox(
-      height: _pageHeight(context),
-      child: Stack(
-        clipBehavior: Clip.none,
-        children: [
-          Positioned.fill(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                FlowTopBar(
-                  logoBytes: widget.identity.logoBytes,
-                  primaryColor: primaryColor,
-                  title: widget.flowTitle,
-                  onBack: widget.onBack,
-                  onHome: widget.onHome,
-                ),
-                const SizedBox(height: 20),
-                Text(
-                  'Confirme seus dados',
-                  textAlign: TextAlign.center,
-                  style: Theme.of(context).textTheme.displaySmall?.copyWith(
-                    color: patientNameColor,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-                const SizedBox(height: 12),
-                Text(
-                  'Confira os dados abaixo antes de continuar.',
-                  textAlign: TextAlign.center,
-                  style: Theme.of(context).textTheme.titleMedium,
-                ),
-                const SizedBox(height: 20),
-                Expanded(
-                  child: LayoutBuilder(
-                    builder: (context, constraints) {
-                      final fields = _buildFields(user, primaryColor);
-                      final useTwoColumns =
-                          !_isKeyboardVisible && constraints.maxWidth >= 720;
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final height = constraints.hasBoundedHeight
+            ? constraints.maxHeight
+            : _pageHeight(context);
 
-                      return SingleChildScrollView(
-                        child: Align(
-                          alignment: useSideKeyboard && _isKeyboardVisible
-                              ? Alignment.centerLeft
-                              : Alignment.center,
-                          child: ConstrainedBox(
-                            constraints: BoxConstraints(
-                              maxWidth: useTwoColumns
-                                  ? 900
-                                  : useSideKeyboard && _isKeyboardVisible
-                                  ? 400
-                                  : 520,
+        return SizedBox(
+          height: height,
+          child: Stack(
+            clipBehavior: Clip.none,
+            children: [
+              Positioned.fill(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    FlowTopBar(
+                      logoBytes: widget.identity.logoBytes,
+                      primaryColor: primaryColor,
+                      title: widget.flowTitle,
+                      onBack: widget.onBack,
+                      onHome: widget.onHome,
+                    ),
+                    const SizedBox(height: 16),
+                    Text(
+                      'Confirme seus dados',
+                      textAlign: TextAlign.center,
+                      style: Theme.of(context).textTheme.displaySmall?.copyWith(
+                        color: patientNameColor,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+                    Text(
+                      'Confira os dados abaixo antes de continuar.',
+                      textAlign: TextAlign.center,
+                      style: Theme.of(context).textTheme.titleMedium,
+                    ),
+                    const SizedBox(height: 16),
+                    Expanded(
+                      child: LayoutBuilder(
+                        builder: (context, constraints) {
+                          final fields = _buildFields(user, primaryColor);
+                          final useTwoColumns =
+                              !_isKeyboardVisible &&
+                              constraints.maxWidth >= 720;
+
+                          return SingleChildScrollView(
+                            child: Align(
+                              alignment: useSideKeyboard && _isKeyboardVisible
+                                  ? Alignment.centerLeft
+                                  : Alignment.center,
+                              child: ConstrainedBox(
+                                constraints: BoxConstraints(
+                                  maxWidth: useTwoColumns
+                                      ? 900
+                                      : useSideKeyboard && _isKeyboardVisible
+                                      ? 400
+                                      : 520,
+                                ),
+                                child: useTwoColumns
+                                    ? _TwoColumnFields(fields: fields)
+                                    : Column(children: fields),
+                              ),
                             ),
-                            child: useTwoColumns
-                                ? _TwoColumnFields(fields: fields)
-                                : Column(children: fields),
-                          ),
-                        ),
-                      );
-                    },
-                  ),
+                          );
+                        },
+                      ),
+                    ),
+                    if (!_isKeyboardVisible) ...[
+                      const SizedBox(height: 16),
+                      _buildActionButtons(primaryColor, buttonColor),
+                    ],
+                  ],
                 ),
-                if (!_isKeyboardVisible) ...[
-                  const SizedBox(height: 20),
-                  _buildActionButtons(primaryColor, buttonColor),
-                ],
-              ],
-            ),
+              ),
+              if (_isKeyboardVisible)
+                Positioned(
+                  left: useSideKeyboard ? null : 0,
+                  right: 0,
+                  top: useSideKeyboard ? 148 : null,
+                  bottom: useSideKeyboard ? null : 0,
+                  child: _buildKeyboard(buttonColor, useSideKeyboard),
+                ),
+            ],
           ),
-          if (_isKeyboardVisible)
-            Positioned(
-              left: useSideKeyboard ? null : 0,
-              right: 0,
-              top: useSideKeyboard ? 148 : null,
-              bottom: useSideKeyboard ? null : 0,
-              child: _buildKeyboard(buttonColor, useSideKeyboard),
-            ),
-        ],
-      ),
+        );
+      },
     );
   }
 
