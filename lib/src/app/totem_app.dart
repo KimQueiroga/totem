@@ -13,6 +13,7 @@ class TotemApp extends StatefulWidget {
     this.loadTerminalContext,
     this.authenticateClient,
     this.updateClient,
+    this.loadPreAttendance,
   });
 
   final Uri? initialUri;
@@ -20,6 +21,7 @@ class TotemApp extends StatefulWidget {
   final TerminalContextLoader? loadTerminalContext;
   final ClientAuthenticator? authenticateClient;
   final ClientUpdater? updateClient;
+  final PreAttendanceLoader? loadPreAttendance;
 
   @override
   State<TotemApp> createState() => _TotemAppState();
@@ -67,6 +69,7 @@ class _TotemAppState extends State<TotemApp> {
         authenticateClient:
             widget.authenticateClient ?? authenticateClientWithCpf,
         updateClient: widget.updateClient ?? updateClientProfile,
+        loadPreAttendance: widget.loadPreAttendance ?? fetchPreAttendance,
       ),
     );
   }

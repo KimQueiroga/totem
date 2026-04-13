@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 
 import '../models/client_authentication.dart';
+import '../models/pre_attendance.dart';
 import '../models/terminal_context.dart';
 import '../models/terminal_visual_identity.dart';
 
@@ -22,6 +23,9 @@ typedef ClientAuthenticator =
 
 typedef ClientUpdater =
     Future<void> Function(ClientProfileUpdate profileUpdate);
+
+typedef PreAttendanceLoader =
+    Future<PreAttendanceQuery> Function(String clientId);
 
 Future<TerminalVisualIdentity> fetchTerminalVisualIdentity(
   String terminalName,
@@ -129,6 +133,27 @@ Future<void> updateClientProfile(ClientProfileUpdate profileUpdate) async {
       'BFF retornou HTTP ${response.statusCode}: ${_truncate(response.body)}',
     );
   }
+}
+
+Future<PreAttendanceQuery> fetchPreAttendance(String clientId) async {
+  final uri = Uri.parse(
+    '$bffBaseUrl/pre-attendance',
+  ).replace(queryParameters: {'clientId': clientId});
+  final response = await http.get(uri, headers: {'Accept': 'application/json'});
+
+  if (response.statusCode < 200 || response.statusCode >= 300) {
+    throw Exception(
+      'BFF retornou HTTP ${response.statusCode}: ${_truncate(response.body)}',
+    );
+  }
+
+  final payload = jsonDecode(response.body);
+
+  if (payload is! Map<String, dynamic>) {
+    throw Exception('Resposta do BFF nao e um objeto JSON.');
+  }
+
+  return PreAttendanceQuery.fromJson(payload);
 }
 
 String _truncate(String value) {

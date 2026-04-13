@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../models/client_authentication.dart';
+import '../models/pre_attendance.dart';
 import '../models/terminal_context.dart';
 import '../models/terminal_visual_identity.dart';
 import '../services/terminal_api.dart';
@@ -11,6 +12,7 @@ import '../widgets/terminal_not_found_content.dart';
 import 'cpf_identification_content.dart';
 import 'client_confirmation_content.dart';
 import 'identification_options_content.dart';
+import 'pre_attendance_guides_content.dart';
 import 'service_selection_content.dart';
 import 'terminal_home_content.dart';
 
@@ -23,6 +25,7 @@ class HomePage extends StatefulWidget {
     required this.loadTerminalContext,
     required this.authenticateClient,
     required this.updateClient,
+    required this.loadPreAttendance,
   });
 
   final String? terminalName;
@@ -31,6 +34,7 @@ class HomePage extends StatefulWidget {
   final TerminalContextLoader loadTerminalContext;
   final ClientAuthenticator authenticateClient;
   final ClientUpdater updateClient;
+  final PreAttendanceLoader loadPreAttendance;
 
   @override
   State<HomePage> createState() => _HomePageState();
@@ -40,6 +44,7 @@ class _HomePageState extends State<HomePage> {
   Future<TerminalVisualIdentity>? _visualIdentity;
   Future<TerminalContext>? _terminalContext;
   ClientAuthentication? _clientAuthentication;
+  Future<PreAttendanceQuery>? _preAttendance;
   bool _isAuthenticatingClient = false;
   String? _clientAuthenticationErrorMessage;
   int _clientAuthenticationFailureCount = 0;
@@ -80,6 +85,7 @@ class _HomePageState extends State<HomePage> {
     setState(() {
       _terminalContext = null;
       _clientAuthentication = null;
+      _preAttendance = null;
       _isAuthenticatingClient = false;
       _clientAuthenticationErrorMessage = null;
       _selectedService = null;
@@ -91,6 +97,7 @@ class _HomePageState extends State<HomePage> {
     setState(() {
       _selectedService = null;
       _clientAuthentication = null;
+      _preAttendance = null;
       _isAuthenticatingClient = false;
       _clientAuthenticationErrorMessage = null;
       _selectedIdentificationOption = null;
@@ -101,6 +108,7 @@ class _HomePageState extends State<HomePage> {
     setState(() {
       _selectedIdentificationOption = null;
       _clientAuthentication = null;
+      _preAttendance = null;
       _isAuthenticatingClient = false;
       _clientAuthenticationErrorMessage = null;
     });
@@ -109,6 +117,7 @@ class _HomePageState extends State<HomePage> {
   void _backToCpfIdentification() {
     setState(() {
       _clientAuthentication = null;
+      _preAttendance = null;
       _isAuthenticatingClient = false;
       _clientAuthenticationErrorMessage = null;
     });
@@ -197,6 +206,7 @@ class _HomePageState extends State<HomePage> {
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(const SnackBar(content: Text('Dados confirmados.')));
+      _loadPreAttendance(profileUpdate.clientId);
       return;
     }
 
@@ -210,6 +220,7 @@ class _HomePageState extends State<HomePage> {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Dados atualizados com sucesso.')),
       );
+      _loadPreAttendance(profileUpdate.clientId);
     } catch (error) {
       if (!mounted) {
         return;
@@ -219,6 +230,21 @@ class _HomePageState extends State<HomePage> {
         SnackBar(content: Text('Falha ao atualizar dados: $error')),
       );
     }
+  }
+
+  void _loadPreAttendance(String clientId) {
+    if (clientId.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Nao foi possivel localizar o codigo do cliente.'),
+        ),
+      );
+      return;
+    }
+
+    setState(() {
+      _preAttendance = widget.loadPreAttendance(clientId);
+    });
   }
 
   @override
@@ -275,6 +301,65 @@ class _HomePageState extends State<HomePage> {
               if (selectedService != null && selectedService.isPreAttendance) {
                 if (_selectedIdentificationOption == IdentificationOption.cpf) {
                   final clientAuthentication = _clientAuthentication;
+                  final preAttendance = _preAttendance;
+
+                  if (clientAuthentication != null && preAttendance != null) {
+                    return FutureBuilder<PreAttendanceQuery>(
+                      future: preAttendance,
+                      builder: (context, preAttendanceSnapshot) {
+                        if (preAttendanceSnapshot.connectionState !=
+                            ConnectionState.done) {
+                          return PageScaffold(
+                            identity: identity,
+                            child: const LoadingContent(
+                              message: 'Carregando guias pre atendimento...',
+                            ),
+                          );
+                        }
+
+                        if (preAttendanceSnapshot.hasError ||
+                            !preAttendanceSnapshot.hasData) {
+                          return PageScaffold(
+                            alignment: Alignment.topCenter,
+                            identity: identity,
+                            maxWidth: 980,
+                            child: TerminalErrorContent(
+                              terminalName: terminalName,
+                              error: preAttendanceSnapshot.error,
+                            ),
+                          );
+                        }
+
+                        return PageScaffold(
+                          alignment: Alignment.topCenter,
+                          identity: identity,
+                          maxWidth: 980,
+                          child: PreAttendanceGuidesContent(
+                            identity: identity,
+                            flowTitle: 'Checkin Pre Atendimento',
+                            authentication: clientAuthentication,
+                            preAttendance: preAttendanceSnapshot.data!,
+                            onBack: () {
+                              setState(() {
+                                _preAttendance = null;
+                              });
+                            },
+                            onHome: _backToHome,
+                            onCancel: _backToCpfIdentification,
+                            onNext: () {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text(
+                                    'Avanco do pre atendimento ainda nao disponivel.',
+                                  ),
+                                ),
+                              );
+                            },
+                          ),
+                        );
+                      },
+                    );
+                  }
 
                   if (clientAuthentication != null) {
                     return PageScaffold(

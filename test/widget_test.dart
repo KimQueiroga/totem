@@ -261,6 +261,33 @@ void main() {
         updateClient: (profileUpdate) async {
           submittedUpdate = profileUpdate;
         },
+        loadPreAttendance: (_) async => const PreAttendanceQuery(
+          message: 'Processamento realizado com sucesso!',
+          status: '0',
+          preAttendances: [
+            PreAttendance(
+              number: '152910',
+              origin: '%LISFRONT',
+              type: 'AC',
+              attendanceType: 'P',
+              guides: [
+                PreAttendanceGuide(
+                  operatorGuideNumber: '1312312312',
+                  authorizationPassword: '1231321312',
+                  requesterName: 'FABIO RIBEIRO BAIAO',
+                  issueDate: '2026-04-13',
+                  exams: [
+                    PreAttendanceExam(
+                      code: '40304361',
+                      description: 'HEMOGRAMA',
+                      materialDescription: 'SANGUE',
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ],
+        ),
       ),
     );
 
@@ -325,6 +352,9 @@ void main() {
     expect(submittedUpdate!.hasChanges, isTrue);
     expect(submittedUpdate!.clientId, '8035115166');
     expect(find.text('Dados atualizados com sucesso.'), findsOneWidget);
+    expect(find.text('Guias pre atendimento'), findsOneWidget);
+    expect(find.text('1312312312'), findsOneWidget);
+    expect(find.text('FABIO RIBEIRO BAIAO'), findsOneWidget);
   });
 
   testWidgets('keeps CPF data and clears only password after failed login', (
