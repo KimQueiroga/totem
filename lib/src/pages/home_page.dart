@@ -334,6 +334,7 @@ class _HomePageState extends State<HomePage> {
                           alignment: Alignment.topCenter,
                           identity: identity,
                           maxWidth: 980,
+                          scrollable: false,
                           child: PreAttendanceGuidesContent(
                             identity: identity,
                             flowTitle: 'Checkin Pre Atendimento',

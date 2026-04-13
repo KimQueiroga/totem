@@ -34,61 +34,69 @@ class PreAttendanceGuidesContent extends StatelessWidget {
     final buttonColor = identity.buttonColor ?? primaryColor;
     final guides = preAttendance.guides;
 
-    return SizedBox(
-      height: _pageHeight(context),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          FlowTopBar(
-            logoBytes: identity.logoBytes,
-            primaryColor: primaryColor,
-            title: flowTitle,
-            onBack: onBack,
-            onHome: onHome,
-          ),
-          const SizedBox(height: 16),
-          _PatientSummary(
-            authentication: authentication,
-            primaryColor: primaryColor,
-          ),
-          const SizedBox(height: 18),
-          Text(
-            'Guias pre atendimento',
-            textAlign: TextAlign.center,
-            style: Theme.of(context).textTheme.displaySmall?.copyWith(
-              color: identity.patientNameColor ?? primaryColor,
-              fontWeight: FontWeight.w700,
-            ),
-          ),
-          const SizedBox(height: 24),
-          Expanded(
-            child: guides.isEmpty
-                ? _EmptyGuidesMessage(primaryColor: primaryColor)
-                : LayoutBuilder(
-                    builder: (context, constraints) {
-                      if (constraints.maxWidth < 720) {
-                        return _GuideList(
-                          guides: guides,
-                          primaryColor: primaryColor,
-                        );
-                      }
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final height = constraints.hasBoundedHeight
+            ? constraints.maxHeight
+            : _pageHeight(context);
 
-                      return _GuideTable(
-                        guides: guides,
-                        primaryColor: primaryColor,
-                      );
-                    },
-                  ),
+        return SizedBox(
+          height: height,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              FlowTopBar(
+                logoBytes: identity.logoBytes,
+                primaryColor: primaryColor,
+                title: flowTitle,
+                onBack: onBack,
+                onHome: onHome,
+              ),
+              const SizedBox(height: 12),
+              _PatientSummary(
+                authentication: authentication,
+                primaryColor: primaryColor,
+              ),
+              const SizedBox(height: 14),
+              Text(
+                'Guias pre atendimento',
+                textAlign: TextAlign.center,
+                style: Theme.of(context).textTheme.displaySmall?.copyWith(
+                  color: identity.patientNameColor ?? primaryColor,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+              const SizedBox(height: 18),
+              Expanded(
+                child: guides.isEmpty
+                    ? _EmptyGuidesMessage(primaryColor: primaryColor)
+                    : LayoutBuilder(
+                        builder: (context, constraints) {
+                          if (constraints.maxWidth < 720) {
+                            return _GuideList(
+                              guides: guides,
+                              primaryColor: primaryColor,
+                            );
+                          }
+
+                          return _GuideTable(
+                            guides: guides,
+                            primaryColor: primaryColor,
+                          );
+                        },
+                      ),
+              ),
+              const SizedBox(height: 18),
+              _ActionButtons(
+                primaryColor: primaryColor,
+                buttonColor: buttonColor,
+                onCancel: onCancel,
+                onNext: guides.isEmpty ? null : onNext,
+              ),
+            ],
           ),
-          const SizedBox(height: 24),
-          _ActionButtons(
-            primaryColor: primaryColor,
-            buttonColor: buttonColor,
-            onCancel: onCancel,
-            onNext: guides.isEmpty ? null : onNext,
-          ),
-        ],
-      ),
+        );
+      },
     );
   }
 

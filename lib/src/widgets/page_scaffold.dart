@@ -9,12 +9,14 @@ class PageScaffold extends StatelessWidget {
     this.identity,
     this.alignment = Alignment.center,
     this.maxWidth = 720,
+    this.scrollable = true,
   });
 
   final Widget child;
   final TerminalVisualIdentity? identity;
   final Alignment alignment;
   final double maxWidth;
+  final bool scrollable;
 
   @override
   Widget build(BuildContext context) {
@@ -28,18 +30,26 @@ class PageScaffold extends StatelessWidget {
             final minHeight = constraints.maxHeight > 64
                 ? constraints.maxHeight - 64
                 : 0.0;
+            final content = Align(
+              alignment: alignment,
+              child: ConstrainedBox(
+                constraints: BoxConstraints(maxWidth: maxWidth),
+                child: child,
+              ),
+            );
+
+            if (!scrollable) {
+              return Padding(
+                padding: const EdgeInsets.all(32),
+                child: SizedBox.expand(child: content),
+              );
+            }
 
             return SingleChildScrollView(
               padding: const EdgeInsets.all(32),
               child: ConstrainedBox(
                 constraints: BoxConstraints(minHeight: minHeight),
-                child: Align(
-                  alignment: alignment,
-                  child: ConstrainedBox(
-                    constraints: BoxConstraints(maxWidth: maxWidth),
-                    child: child,
-                  ),
-                ),
+                child: content,
               ),
             );
           },
