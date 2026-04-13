@@ -210,7 +210,7 @@ class _ClientConfirmationContentState extends State<ClientConfirmationContent> {
                   onBack: widget.onBack,
                   onHome: widget.onHome,
                 ),
-                const SizedBox(height: 28),
+                const SizedBox(height: 20),
                 Text(
                   'Confirme seus dados',
                   textAlign: TextAlign.center,
@@ -225,118 +225,38 @@ class _ClientConfirmationContentState extends State<ClientConfirmationContent> {
                   textAlign: TextAlign.center,
                   style: Theme.of(context).textTheme.titleMedium,
                 ),
-                const SizedBox(height: 28),
+                const SizedBox(height: 20),
                 Expanded(
-                  child: SingleChildScrollView(
-                    child: Align(
-                      alignment: useSideKeyboard && _isKeyboardVisible
-                          ? Alignment.centerLeft
-                          : Alignment.center,
-                      child: ConstrainedBox(
-                        constraints: BoxConstraints(
-                          maxWidth: useSideKeyboard && _isKeyboardVisible
-                              ? 400
-                              : 760,
+                  child: LayoutBuilder(
+                    builder: (context, constraints) {
+                      final fields = _buildFields(user, primaryColor);
+                      final useTwoColumns =
+                          !_isKeyboardVisible && constraints.maxWidth >= 720;
+
+                      return SingleChildScrollView(
+                        child: Align(
+                          alignment: useSideKeyboard && _isKeyboardVisible
+                              ? Alignment.centerLeft
+                              : Alignment.center,
+                          child: ConstrainedBox(
+                            constraints: BoxConstraints(
+                              maxWidth: useTwoColumns
+                                  ? 900
+                                  : useSideKeyboard && _isKeyboardVisible
+                                  ? 400
+                                  : 520,
+                            ),
+                            child: useTwoColumns
+                                ? _TwoColumnFields(fields: fields)
+                                : Column(children: fields),
+                          ),
                         ),
-                        child: Column(
-                          children: [
-                            _ReadOnlyConfirmationField(
-                              label: 'Nome',
-                              value: user.displayName,
-                              primaryColor: primaryColor,
-                            ),
-                            _ReadOnlyConfirmationField(
-                              label: 'CPF',
-                              value: _maskedCpf(user.cpf),
-                              primaryColor: primaryColor,
-                            ),
-                            _ReadOnlyConfirmationField(
-                              label: 'Data de nascimento',
-                              value: _formatDate(user.birthDate),
-                              primaryColor: primaryColor,
-                            ),
-                            _EditableConfirmationTextField(
-                              label: _EditableConfirmationField.email.label,
-                              controller: _emailController,
-                              primaryColor: primaryColor,
-                              isActive:
-                                  _activeField ==
-                                      _EditableConfirmationField.email &&
-                                  _isKeyboardVisible,
-                              onTap: () => _setActiveField(
-                                _EditableConfirmationField.email,
-                              ),
-                            ),
-                            _EditableConfirmationTextField(
-                              label:
-                                  _EditableConfirmationField.mobilePhone.label,
-                              controller: _mobilePhoneController,
-                              primaryColor: primaryColor,
-                              isActive:
-                                  _activeField ==
-                                      _EditableConfirmationField.mobilePhone &&
-                                  _isKeyboardVisible,
-                              onTap: () => _setActiveField(
-                                _EditableConfirmationField.mobilePhone,
-                              ),
-                            ),
-                            _EditableConfirmationTextField(
-                              label: _EditableConfirmationField.homePhone.label,
-                              controller: _homePhoneController,
-                              primaryColor: primaryColor,
-                              isActive:
-                                  _activeField ==
-                                      _EditableConfirmationField.homePhone &&
-                                  _isKeyboardVisible,
-                              onTap: () => _setActiveField(
-                                _EditableConfirmationField.homePhone,
-                              ),
-                            ),
-                            _EditableConfirmationTextField(
-                              label:
-                                  _EditableConfirmationField.motherName.label,
-                              controller: _motherNameController,
-                              primaryColor: primaryColor,
-                              isActive:
-                                  _activeField ==
-                                      _EditableConfirmationField.motherName &&
-                                  _isKeyboardVisible,
-                              onTap: () => _setActiveField(
-                                _EditableConfirmationField.motherName,
-                              ),
-                            ),
-                            _EditableConfirmationTextField(
-                              label: _EditableConfirmationField.address.label,
-                              controller: _addressController,
-                              primaryColor: primaryColor,
-                              isActive:
-                                  _activeField ==
-                                      _EditableConfirmationField.address &&
-                                  _isKeyboardVisible,
-                              onTap: () => _setActiveField(
-                                _EditableConfirmationField.address,
-                              ),
-                            ),
-                            _EditableConfirmationTextField(
-                              label: _EditableConfirmationField.city.label,
-                              controller: _cityController,
-                              primaryColor: primaryColor,
-                              isActive:
-                                  _activeField ==
-                                      _EditableConfirmationField.city &&
-                                  _isKeyboardVisible,
-                              onTap: () => _setActiveField(
-                                _EditableConfirmationField.city,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
+                      );
+                    },
                   ),
                 ),
                 if (!_isKeyboardVisible) ...[
-                  const SizedBox(height: 28),
+                  const SizedBox(height: 20),
                   _buildActionButtons(primaryColor, buttonColor),
                 ],
               ],
@@ -406,6 +326,80 @@ class _ClientConfirmationContentState extends State<ClientConfirmationContent> {
     return SizedBox(width: width, child: keyboard);
   }
 
+  List<Widget> _buildFields(ClientUser user, Color primaryColor) {
+    return [
+      _ReadOnlyConfirmationField(
+        label: 'Nome',
+        value: user.displayName,
+        primaryColor: primaryColor,
+      ),
+      _ReadOnlyConfirmationField(
+        label: 'CPF',
+        value: _maskedCpf(user.cpf),
+        primaryColor: primaryColor,
+      ),
+      _ReadOnlyConfirmationField(
+        label: 'Data de nascimento',
+        value: _formatDate(user.birthDate),
+        primaryColor: primaryColor,
+      ),
+      _EditableConfirmationTextField(
+        label: _EditableConfirmationField.email.label,
+        controller: _emailController,
+        primaryColor: primaryColor,
+        isActive:
+            _activeField == _EditableConfirmationField.email &&
+            _isKeyboardVisible,
+        onTap: () => _setActiveField(_EditableConfirmationField.email),
+      ),
+      _EditableConfirmationTextField(
+        label: _EditableConfirmationField.mobilePhone.label,
+        controller: _mobilePhoneController,
+        primaryColor: primaryColor,
+        isActive:
+            _activeField == _EditableConfirmationField.mobilePhone &&
+            _isKeyboardVisible,
+        onTap: () => _setActiveField(_EditableConfirmationField.mobilePhone),
+      ),
+      _EditableConfirmationTextField(
+        label: _EditableConfirmationField.homePhone.label,
+        controller: _homePhoneController,
+        primaryColor: primaryColor,
+        isActive:
+            _activeField == _EditableConfirmationField.homePhone &&
+            _isKeyboardVisible,
+        onTap: () => _setActiveField(_EditableConfirmationField.homePhone),
+      ),
+      _EditableConfirmationTextField(
+        label: _EditableConfirmationField.motherName.label,
+        controller: _motherNameController,
+        primaryColor: primaryColor,
+        isActive:
+            _activeField == _EditableConfirmationField.motherName &&
+            _isKeyboardVisible,
+        onTap: () => _setActiveField(_EditableConfirmationField.motherName),
+      ),
+      _EditableConfirmationTextField(
+        label: _EditableConfirmationField.address.label,
+        controller: _addressController,
+        primaryColor: primaryColor,
+        isActive:
+            _activeField == _EditableConfirmationField.address &&
+            _isKeyboardVisible,
+        onTap: () => _setActiveField(_EditableConfirmationField.address),
+      ),
+      _EditableConfirmationTextField(
+        label: _EditableConfirmationField.city.label,
+        controller: _cityController,
+        primaryColor: primaryColor,
+        isActive:
+            _activeField == _EditableConfirmationField.city &&
+            _isKeyboardVisible,
+        onTap: () => _setActiveField(_EditableConfirmationField.city),
+      ),
+    ];
+  }
+
   Widget _buildActionButtons(Color primaryColor, Color buttonColor) {
     return LayoutBuilder(
       builder: (context, constraints) {
@@ -436,22 +430,54 @@ class _ClientConfirmationContentState extends State<ClientConfirmationContent> {
           return Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              SizedBox(height: 64, child: confirmButton),
+              SizedBox(height: 56, child: confirmButton),
               const SizedBox(height: 16),
-              SizedBox(height: 64, child: rejectButton),
+              SizedBox(height: 56, child: rejectButton),
             ],
           );
         }
 
         return Row(
           children: [
-            Expanded(child: SizedBox(height: 64, child: rejectButton)),
+            Expanded(child: SizedBox(height: 56, child: rejectButton)),
             const SizedBox(width: 48),
-            Expanded(child: SizedBox(height: 64, child: confirmButton)),
+            Expanded(child: SizedBox(height: 56, child: confirmButton)),
           ],
         );
       },
     );
+  }
+}
+
+class _TwoColumnFields extends StatelessWidget {
+  const _TwoColumnFields({required this.fields});
+
+  final List<Widget> fields;
+
+  @override
+  Widget build(BuildContext context) {
+    final rows = <Widget>[];
+
+    for (var index = 0; index < fields.length; index += 2) {
+      final rightIndex = index + 1;
+
+      rows.add(
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Expanded(child: fields[index]),
+            const SizedBox(width: 24),
+            Expanded(
+              child: rightIndex < fields.length
+                  ? fields[rightIndex]
+                  : const SizedBox.shrink(),
+            ),
+          ],
+        ),
+      );
+    }
+
+    return Column(children: rows);
   }
 }
 
@@ -474,8 +500,12 @@ class _ReadOnlyConfirmationField extends StatelessWidget {
         canRequestFocus: false,
         initialValue: _displayValue(value),
         decoration: InputDecoration(
+          isDense: true,
           labelText: label,
-          helperText: 'Nao editavel',
+          contentPadding: const EdgeInsets.symmetric(
+            horizontal: 14,
+            vertical: 12,
+          ),
           suffixIcon: Icon(Icons.lock_outline, color: primaryColor),
           border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
         ),
@@ -509,8 +539,16 @@ class _EditableConfirmationTextField extends StatelessWidget {
         canRequestFocus: false,
         onTap: onTap,
         decoration: InputDecoration(
+          isDense: true,
           labelText: label,
-          helperText: isActive ? 'Digite usando o teclado na tela.' : null,
+          contentPadding: const EdgeInsets.symmetric(
+            horizontal: 14,
+            vertical: 12,
+          ),
+          suffixIcon: Icon(
+            Icons.keyboard_alt_outlined,
+            color: isActive ? primaryColor : Colors.grey,
+          ),
           enabledBorder: OutlineInputBorder(
             borderSide: BorderSide(
               color: isActive ? primaryColor : Colors.grey,

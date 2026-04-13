@@ -20,6 +20,42 @@ void main() {
     expect(terminalName, 'ihpmgaimtotem1');
   });
 
+  test('uses social name as client display name when available', () {
+    const user = ClientUser(
+      fullName: 'NOME CIVIL',
+      socialName: 'NOME SOCIAL',
+      cpf: '12345678901',
+      birthDate: '1988-04-28',
+      email: null,
+      mobilePhoneNumber: null,
+      homePhoneNumber: null,
+      motherName: null,
+      streetAndComplement: null,
+      city: null,
+      uf: null,
+    );
+
+    expect(user.displayName, 'NOME SOCIAL');
+  });
+
+  test('uses full name as client display name when social name is empty', () {
+    const user = ClientUser(
+      fullName: 'NOME CIVIL',
+      socialName: ' ',
+      cpf: '12345678901',
+      birthDate: '1988-04-28',
+      email: null,
+      mobilePhoneNumber: null,
+      homePhoneNumber: null,
+      motherName: null,
+      streetAndComplement: null,
+      city: null,
+      uf: null,
+    );
+
+    expect(user.displayName, 'NOME CIVIL');
+  });
+
   testWidgets('renders autoatendimento start screen from visual identity', (
     tester,
   ) async {
