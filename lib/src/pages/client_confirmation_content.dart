@@ -71,8 +71,10 @@ class _ClientConfirmationContentState extends State<ClientConfirmationContent> {
 
   void _loadUser(ClientUser user) {
     _emailController.text = user.email?.trim() ?? '';
-    _mobilePhoneController.text = user.mobilePhoneNumber?.trim() ?? '';
-    _homePhoneController.text = user.homePhoneNumber?.trim() ?? '';
+    _mobilePhoneController.text = _formatPhoneNumber(
+      user.mobilePhoneNumber ?? '',
+    );
+    _homePhoneController.text = _formatPhoneNumber(user.homePhoneNumber ?? '');
     _motherNameController.text = user.motherName?.trim() ?? '';
     _addressController.text = user.streetAndComplement?.trim() ?? '';
     _cityController.text = user.cityAndState.trim();
@@ -122,6 +124,11 @@ class _ClientConfirmationContentState extends State<ClientConfirmationContent> {
       return;
     }
 
+    if (activeField.isPhone) {
+      _appendPhoneDigit(activeField, value);
+      return;
+    }
+
     final controller = activeField.controller(this);
 
     if (controller.text.length >= activeField.maxLength) {
@@ -139,6 +146,21 @@ class _ClientConfirmationContentState extends State<ClientConfirmationContent> {
     }
 
     final controller = activeField.controller(this);
+
+    if (activeField.isPhone) {
+      final digits = _digitsOnly(controller.text);
+
+      if (digits.isEmpty) {
+        return;
+      }
+
+      _setControllerText(
+        controller,
+        _formatPhoneNumber(digits.substring(0, digits.length - 1)),
+      );
+      return;
+    }
+
     final value = controller.text;
 
     if (value.isEmpty) {
@@ -156,6 +178,17 @@ class _ClientConfirmationContentState extends State<ClientConfirmationContent> {
     }
 
     _setControllerText(activeField.controller(this), '');
+  }
+
+  void _appendPhoneDigit(_EditableConfirmationField field, String value) {
+    final controller = field.controller(this);
+    final digits = _digitsOnly(controller.text);
+
+    if (digits.length >= field.maxLength) {
+      return;
+    }
+
+    _setControllerText(controller, _formatPhoneNumber('$digits$value'));
   }
 
   void _toggleLetterCase() {
@@ -628,9 +661,17 @@ extension on _EditableConfirmationField {
   int get maxLength {
     return switch (this) {
       _EditableConfirmationField.mobilePhone ||
-      _EditableConfirmationField.homePhone => 14,
+      _EditableConfirmationField.homePhone => 11,
       _EditableConfirmationField.email => 80,
       _ => 120,
+    };
+  }
+
+  bool get isPhone {
+    return switch (this) {
+      _EditableConfirmationField.mobilePhone ||
+      _EditableConfirmationField.homePhone => true,
+      _ => false,
     };
   }
 
@@ -675,3 +716,30 @@ String _formatDate(String value) {
 
   return '${parts[2]}/${parts[1]}/${parts[0]}';
 }
+
+String _formatPhoneNumber(String value) {
+  final digits = _digitsOnly(value);
+
+  if (digits.isEmpty) {
+    return '';
+  }
+
+  if (digits.length <= 2) {
+    return '($digits';
+  }
+
+  final areaCode = digits.substring(0, 2);
+  final number = digits.substring(2);
+
+  if (number.length <= 4) {
+    return '($areaCode) $number';
+  }
+
+  if (number.length <= 8) {
+    return '($areaCode) ${number.substring(0, 4)}-${number.substring(4)}';
+  }
+
+  return '($areaCode) ${number.substring(0, 5)}-${number.substring(5, 9)}';
+}
+
+String _digitsOnly(String value) => value.replaceAll(RegExp(r'\D'), '');

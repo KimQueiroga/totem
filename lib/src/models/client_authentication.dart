@@ -147,8 +147,8 @@ class ClientProfileUpdate {
     final user = authentication.user;
 
     return _normalized(email) != _normalized(user.email) ||
-        _normalized(mobilePhoneNumber) != _normalized(user.mobilePhoneNumber) ||
-        _normalized(homePhoneNumber) != _normalized(user.homePhoneNumber) ||
+        _digitsOnly(mobilePhoneNumber) != _digitsOnly(user.mobilePhoneNumber) ||
+        _digitsOnly(homePhoneNumber) != _digitsOnly(user.homePhoneNumber) ||
         _normalized(motherName) != _normalized(user.motherName) ||
         _normalized(streetAndComplement) !=
             _normalized(user.streetAndComplement) ||
@@ -196,8 +196,8 @@ class ClientProfileUpdate {
       'height': 0,
       'maritalStatus': '',
       'contacts': {
-        'mainPhone': mobilePhoneNumber.trim(),
-        'secondaryPhone': homePhoneNumber.trim(),
+        'mainPhone': _digitsOnly(mobilePhoneNumber),
+        'secondaryPhone': _digitsOnly(homePhoneNumber),
         'email': email.trim(),
         'via': <String, Object?>{},
       },
@@ -231,6 +231,9 @@ int? _intValue(Object? value) {
 }
 
 String _normalized(String? value) => value?.trim() ?? '';
+
+String _digitsOnly(String? value) =>
+    (value ?? '').replaceAll(RegExp(r'\D'), '');
 
 _CityAndState _parseCityAndState(String value, ClientUser user) {
   final trimmedValue = value.trim();

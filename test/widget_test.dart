@@ -294,6 +294,7 @@ void main() {
     expect(find.text('Confirme seus dados'), findsOneWidget);
     expect(find.text('FAKE BEN DEX I O\'NEAL'), findsOneWidget);
     expect(find.text('ben.oneal@pardini.com.br'), findsOneWidget);
+    expect(find.text('(71) 85711-3469'), findsOneWidget);
     expect(find.byKey(const ValueKey('numeric-touch-key-next')), findsNothing);
 
     await _tapTextFormField(tester, 'Nome');
