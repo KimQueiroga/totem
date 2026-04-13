@@ -326,6 +326,10 @@ class _HomePageState extends State<HomePage> {
                             child: TerminalErrorContent(
                               terminalName: terminalName,
                               error: preAttendanceSnapshot.error,
+                              title:
+                                  'Nao foi possivel carregar as guias de pre atendimento.',
+                              subtitle:
+                                  'Tente novamente ou procure um atendente.',
                             ),
                           );
                         }

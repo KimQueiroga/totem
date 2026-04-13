@@ -6,10 +6,14 @@ class TerminalErrorContent extends StatelessWidget {
     super.key,
     required this.terminalName,
     this.error,
+    this.title = 'Nao foi possivel carregar este terminal.',
+    this.subtitle,
   });
 
   final String terminalName;
   final Object? error;
+  final String title;
+  final String? subtitle;
 
   @override
   Widget build(BuildContext context) {
@@ -23,7 +27,7 @@ class TerminalErrorContent extends StatelessWidget {
         ),
         const SizedBox(height: 32),
         Text(
-          'Nao foi possivel carregar este terminal.',
+          title,
           textAlign: TextAlign.center,
           style: Theme.of(
             context,
@@ -31,7 +35,7 @@ class TerminalErrorContent extends StatelessWidget {
         ),
         const SizedBox(height: 12),
         Text(
-          terminalName,
+          subtitle ?? terminalName,
           textAlign: TextAlign.center,
           style: Theme.of(context).textTheme.titleLarge,
         ),
