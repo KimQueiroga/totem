@@ -12,6 +12,9 @@ class CpfIdentificationContent extends StatefulWidget {
     required this.onBack,
     required this.onSubmit,
     required this.onForgotPassword,
+    this.isSubmitting = false,
+    this.errorMessage,
+    this.failureCount = 0,
   });
 
   final TerminalVisualIdentity identity;
@@ -20,6 +23,9 @@ class CpfIdentificationContent extends StatefulWidget {
   final VoidCallback onBack;
   final ValueChanged<CpfIdentificationData> onSubmit;
   final VoidCallback onForgotPassword;
+  final bool isSubmitting;
+  final String? errorMessage;
+  final int failureCount;
 
   @override
   State<CpfIdentificationContent> createState() =>
@@ -43,7 +49,23 @@ class _CpfIdentificationContentState extends State<CpfIdentificationContent> {
     super.dispose();
   }
 
+  @override
+  void didUpdateWidget(covariant CpfIdentificationContent oldWidget) {
+    super.didUpdateWidget(oldWidget);
+
+    if (widget.failureCount != oldWidget.failureCount &&
+        widget.errorMessage != null) {
+      _setControllerText(_passwordController, '');
+      _activeField = _CpfIdentificationField.password;
+      _isKeyboardVisible = true;
+    }
+  }
+
   void _submit() {
+    if (widget.isSubmitting) {
+      return;
+    }
+
     if (!(_formKey.currentState?.validate() ?? false)) {
       return;
     }
@@ -208,89 +230,110 @@ class _CpfIdentificationContentState extends State<CpfIdentificationContent> {
                   ),
                 ),
                 const SizedBox(height: 32),
-                Align(
-                  alignment: useSideKeyboard && _isKeyboardVisible
-                      ? Alignment.centerLeft
-                      : Alignment.center,
-                  child: ConstrainedBox(
-                    constraints: const BoxConstraints(maxWidth: 420),
-                    child: Form(
-                      key: _formKey,
-                      child: Column(
-                        children: [
-                          TextFormField(
-                            controller: _cpfController,
-                            readOnly: true,
-                            showCursor: true,
-                            canRequestFocus: false,
-                            onTap: () =>
-                                _setActiveField(_CpfIdentificationField.cpf),
-                            decoration: _inputDecoration(
-                              label: 'CPF',
-                              field: _CpfIdentificationField.cpf,
-                            ),
-                            keyboardType: TextInputType.number,
-                            validator: (value) {
-                              return _digitsOnly(value ?? '').length == 11
-                                  ? null
-                                  : 'Informe um CPF valido.';
-                            },
+                Expanded(
+                  child: SingleChildScrollView(
+                    padding: EdgeInsets.only(
+                      bottom: _isKeyboardVisible && !useSideKeyboard ? 360 : 96,
+                    ),
+                    child: Align(
+                      alignment: useSideKeyboard && _isKeyboardVisible
+                          ? Alignment.centerLeft
+                          : Alignment.center,
+                      child: ConstrainedBox(
+                        constraints: const BoxConstraints(maxWidth: 420),
+                        child: Form(
+                          key: _formKey,
+                          child: Column(
+                            children: [
+                              if (widget.errorMessage != null) ...[
+                                _AuthenticationErrorBanner(
+                                  message: widget.errorMessage!,
+                                  color: primaryColor,
+                                ),
+                                const SizedBox(height: 20),
+                              ],
+                              TextFormField(
+                                key: const ValueKey('cpf-identification-cpf'),
+                                controller: _cpfController,
+                                readOnly: true,
+                                showCursor: true,
+                                canRequestFocus: false,
+                                onTap: () => _setActiveField(
+                                  _CpfIdentificationField.cpf,
+                                ),
+                                decoration: _inputDecoration(
+                                  label: 'CPF',
+                                  field: _CpfIdentificationField.cpf,
+                                ),
+                                keyboardType: TextInputType.number,
+                                validator: (value) {
+                                  return _digitsOnly(value ?? '').length == 11
+                                      ? null
+                                      : 'Informe um CPF valido.';
+                                },
+                              ),
+                              const SizedBox(height: 20),
+                              TextFormField(
+                                key: const ValueKey(
+                                  'cpf-identification-birth-date',
+                                ),
+                                controller: _birthDateController,
+                                readOnly: true,
+                                showCursor: true,
+                                canRequestFocus: false,
+                                onTap: () => _setActiveField(
+                                  _CpfIdentificationField.birthDate,
+                                ),
+                                decoration: _inputDecoration(
+                                  label: 'Data de nascimento',
+                                  field: _CpfIdentificationField.birthDate,
+                                  hint: 'DD/MM/AAAA',
+                                ),
+                                keyboardType: TextInputType.number,
+                                validator: (value) {
+                                  return _digitsOnly(value ?? '').length == 8
+                                      ? null
+                                      : 'Informe a data de nascimento.';
+                                },
+                              ),
+                              const SizedBox(height: 20),
+                              TextFormField(
+                                key: const ValueKey(
+                                  'cpf-identification-password',
+                                ),
+                                controller: _passwordController,
+                                readOnly: true,
+                                showCursor: true,
+                                canRequestFocus: false,
+                                onTap: () => _setActiveField(
+                                  _CpfIdentificationField.password,
+                                ),
+                                decoration: _inputDecoration(
+                                  label: 'Senha',
+                                  field: _CpfIdentificationField.password,
+                                ),
+                                obscureText: true,
+                                validator: (value) {
+                                  return (value ?? '').trim().isEmpty
+                                      ? 'Informe a senha.'
+                                      : null;
+                                },
+                              ),
+                              const SizedBox(height: 22),
+                              TextButton(
+                                onPressed: widget.onForgotPassword,
+                                style: TextButton.styleFrom(
+                                  foregroundColor: primaryColor,
+                                ),
+                                child: const Text('Esqueci minha senha'),
+                              ),
+                            ],
                           ),
-                          const SizedBox(height: 20),
-                          TextFormField(
-                            controller: _birthDateController,
-                            readOnly: true,
-                            showCursor: true,
-                            canRequestFocus: false,
-                            onTap: () => _setActiveField(
-                              _CpfIdentificationField.birthDate,
-                            ),
-                            decoration: _inputDecoration(
-                              label: 'Data de nascimento',
-                              field: _CpfIdentificationField.birthDate,
-                              hint: 'DD/MM/AAAA',
-                            ),
-                            keyboardType: TextInputType.number,
-                            validator: (value) {
-                              return _digitsOnly(value ?? '').length == 8
-                                  ? null
-                                  : 'Informe a data de nascimento.';
-                            },
-                          ),
-                          const SizedBox(height: 20),
-                          TextFormField(
-                            controller: _passwordController,
-                            readOnly: true,
-                            showCursor: true,
-                            canRequestFocus: false,
-                            onTap: () => _setActiveField(
-                              _CpfIdentificationField.password,
-                            ),
-                            decoration: _inputDecoration(
-                              label: 'Senha',
-                              field: _CpfIdentificationField.password,
-                            ),
-                            obscureText: true,
-                            validator: (value) {
-                              return (value ?? '').trim().isEmpty
-                                  ? 'Informe a senha.'
-                                  : null;
-                            },
-                          ),
-                          const SizedBox(height: 22),
-                          TextButton(
-                            onPressed: widget.onForgotPassword,
-                            style: TextButton.styleFrom(
-                              foregroundColor: primaryColor,
-                            ),
-                            child: const Text('Esqueci minha senha'),
-                          ),
-                        ],
+                        ),
                       ),
                     ),
                   ),
                 ),
-                const Spacer(),
               ],
             ),
           ),
@@ -377,15 +420,25 @@ class _CpfIdentificationContentState extends State<CpfIdentificationContent> {
           onPressed: widget.onBack,
           child: const Text('Cancelar'),
         );
-        final submitButton = FilledButton(
+        final submitButton = FilledButton.icon(
           style: FilledButton.styleFrom(
             backgroundColor: buttonColor,
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(8),
             ),
           ),
+          icon: widget.isSubmitting
+              ? const SizedBox(
+                  width: 18,
+                  height: 18,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    color: Colors.white,
+                  ),
+                )
+              : const SizedBox.shrink(),
           onPressed: _submit,
-          child: const Text('Entrar'),
+          label: Text(widget.isSubmitting ? 'Validando...' : 'Entrar'),
         );
 
         if (stackButtons) {
@@ -432,6 +485,46 @@ class _CpfIdentificationContentState extends State<CpfIdentificationContent> {
         borderRadius: BorderRadius.circular(8),
       ),
       border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+    );
+  }
+}
+
+class _AuthenticationErrorBanner extends StatelessWidget {
+  const _AuthenticationErrorBanner({
+    required this.message,
+    required this.color,
+  });
+
+  final String message;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) {
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.10),
+        border: Border.all(color: color.withValues(alpha: 0.35)),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(14),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Icon(Icons.info_outline, color: color),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                message,
+                style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                  color: color,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

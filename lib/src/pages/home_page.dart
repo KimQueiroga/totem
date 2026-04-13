@@ -39,7 +39,10 @@ class HomePage extends StatefulWidget {
 class _HomePageState extends State<HomePage> {
   Future<TerminalVisualIdentity>? _visualIdentity;
   Future<TerminalContext>? _terminalContext;
-  Future<ClientAuthentication>? _clientAuthentication;
+  ClientAuthentication? _clientAuthentication;
+  bool _isAuthenticatingClient = false;
+  String? _clientAuthenticationErrorMessage;
+  int _clientAuthenticationFailureCount = 0;
   TerminalService? _selectedService;
   IdentificationOption? _selectedIdentificationOption;
 
@@ -77,6 +80,8 @@ class _HomePageState extends State<HomePage> {
     setState(() {
       _terminalContext = null;
       _clientAuthentication = null;
+      _isAuthenticatingClient = false;
+      _clientAuthenticationErrorMessage = null;
       _selectedService = null;
       _selectedIdentificationOption = null;
     });
@@ -86,6 +91,8 @@ class _HomePageState extends State<HomePage> {
     setState(() {
       _selectedService = null;
       _clientAuthentication = null;
+      _isAuthenticatingClient = false;
+      _clientAuthenticationErrorMessage = null;
       _selectedIdentificationOption = null;
     });
   }
@@ -94,12 +101,16 @@ class _HomePageState extends State<HomePage> {
     setState(() {
       _selectedIdentificationOption = null;
       _clientAuthentication = null;
+      _isAuthenticatingClient = false;
+      _clientAuthenticationErrorMessage = null;
     });
   }
 
   void _backToCpfIdentification() {
     setState(() {
       _clientAuthentication = null;
+      _isAuthenticatingClient = false;
+      _clientAuthenticationErrorMessage = null;
     });
   }
 
@@ -131,16 +142,44 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  void _handleCpfIdentificationSubmit(CpfIdentificationData data) {
+  Future<void> _handleCpfIdentificationSubmit(
+    CpfIdentificationData data,
+  ) async {
     setState(() {
-      _clientAuthentication = widget.authenticateClient(
+      _isAuthenticatingClient = true;
+      _clientAuthenticationErrorMessage = null;
+    });
+
+    try {
+      final authentication = await widget.authenticateClient(
         ClientCredentials(
           cpf: data.cpf,
           password: data.password,
           birthDate: data.birthDate,
         ),
       );
-    });
+
+      if (!mounted) {
+        return;
+      }
+
+      setState(() {
+        _clientAuthentication = authentication;
+        _isAuthenticatingClient = false;
+      });
+    } catch (_) {
+      if (!mounted) {
+        return;
+      }
+
+      setState(() {
+        _clientAuthentication = null;
+        _isAuthenticatingClient = false;
+        _clientAuthenticationErrorMessage =
+            'Nao foi possivel validar seus dados. Confira as informacoes e tente novamente.';
+        _clientAuthenticationFailureCount++;
+      });
+    }
   }
 
   void _handleForgotPassword() {
@@ -238,47 +277,19 @@ class _HomePageState extends State<HomePage> {
                   final clientAuthentication = _clientAuthentication;
 
                   if (clientAuthentication != null) {
-                    return FutureBuilder<ClientAuthentication>(
-                      future: clientAuthentication,
-                      builder: (context, clientSnapshot) {
-                        if (clientSnapshot.connectionState !=
-                            ConnectionState.done) {
-                          return PageScaffold(
-                            identity: identity,
-                            child: const LoadingContent(
-                              message: 'Validando dados do cliente...',
-                            ),
-                          );
-                        }
-
-                        if (clientSnapshot.hasError ||
-                            !clientSnapshot.hasData) {
-                          return PageScaffold(
-                            alignment: Alignment.topCenter,
-                            identity: identity,
-                            maxWidth: 980,
-                            child: TerminalErrorContent(
-                              terminalName: terminalName,
-                              error: clientSnapshot.error,
-                            ),
-                          );
-                        }
-
-                        return PageScaffold(
-                          alignment: Alignment.topCenter,
-                          identity: identity,
-                          maxWidth: 980,
-                          child: ClientConfirmationContent(
-                            identity: identity,
-                            flowTitle: 'Checkin Pre Atendimento',
-                            authentication: clientSnapshot.data!,
-                            onBack: _backToCpfIdentification,
-                            onHome: _backToHome,
-                            onReject: _backToCpfIdentification,
-                            onConfirm: _handleClientConfirmation,
-                          ),
-                        );
-                      },
+                    return PageScaffold(
+                      alignment: Alignment.topCenter,
+                      identity: identity,
+                      maxWidth: 980,
+                      child: ClientConfirmationContent(
+                        identity: identity,
+                        flowTitle: 'Checkin Pre Atendimento',
+                        authentication: clientAuthentication,
+                        onBack: _backToCpfIdentification,
+                        onHome: _backToHome,
+                        onReject: _backToCpfIdentification,
+                        onConfirm: _handleClientConfirmation,
+                      ),
                     );
                   }
 
@@ -293,6 +304,9 @@ class _HomePageState extends State<HomePage> {
                       onBack: _backToIdentificationOptions,
                       onSubmit: _handleCpfIdentificationSubmit,
                       onForgotPassword: _handleForgotPassword,
+                      isSubmitting: _isAuthenticatingClient,
+                      errorMessage: _clientAuthenticationErrorMessage,
+                      failureCount: _clientAuthenticationFailureCount,
                     ),
                   );
                 }

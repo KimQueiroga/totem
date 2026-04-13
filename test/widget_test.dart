@@ -326,6 +326,72 @@ void main() {
     expect(find.text('Dados atualizados com sucesso.'), findsOneWidget);
   });
 
+  testWidgets('keeps CPF data and clears only password after failed login', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      TotemApp(
+        initialUri: Uri.parse('http://127.0.0.1:8080/terminal=ihpmgaimtotem1'),
+        loadVisualIdentity: (_) async => const TerminalVisualIdentity(
+          alias: 'HERMES PARDINI (MG)',
+          primaryColor: Color(0xFFCF043B),
+          primaryHoverColor: Color(0xFF9D032D),
+          buttonColor: Color(0xFFD31245),
+          patientNameColor: Color(0xFFCF043B),
+          logoBase64: '',
+        ),
+        loadTerminalContext: (_) async => const TerminalContext(
+          company: '1',
+          store: '1',
+          printer: 'AIMT0001',
+          location: '1',
+          services: [
+            TerminalService(
+              id: '3',
+              name: 'PRE_ATENDIMENTO',
+              hostName: 'ihpmgaimtotem1',
+              termsOfUse: '',
+            ),
+          ],
+        ),
+        authenticateClient: (_) async {
+          throw Exception('HTTP 401');
+        },
+      ),
+    );
+
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Iniciar atendimento'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Pre Atendimento'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Usar CPF'));
+    await tester.pumpAndSettle();
+
+    await _tapTextFormField(tester, 'CPF');
+    await _tapKeyboardDigits(tester, '12345678901');
+    await _tapKeyboardNext(tester);
+    await _tapKeyboardDigits(tester, '01012000');
+    await _tapKeyboardNext(tester);
+    await _tapKeyboardKeys(tester, 'a1b2');
+    await _tapKeyboardNext(tester);
+    await tester.ensureVisible(find.text('Entrar'));
+    await tester.tap(find.text('Entrar'));
+    await tester.pumpAndSettle();
+
+    expect(
+      find.text(
+        'Nao foi possivel validar seus dados. Confira as informacoes e tente novamente.',
+      ),
+      findsOneWidget,
+    );
+    expect(find.text('Nao foi possivel carregar este terminal.'), findsNothing);
+    expect(_fieldText(tester, 'cpf-identification-cpf'), '123.456.789-01');
+    expect(_fieldText(tester, 'cpf-identification-birth-date'), '01/01/2000');
+    expect(_fieldText(tester, 'cpf-identification-password'), '');
+    expect(find.text('Digitando: Senha'), findsOneWidget);
+  });
+
   testWidgets('returns to home after inactivity timeout', (tester) async {
     await tester.pumpWidget(
       TotemApp(
@@ -405,4 +471,10 @@ Future<void> _tapKeyboardNext(WidgetTester tester) async {
 
   await tester.tap(key);
   await tester.pump();
+}
+
+String _fieldText(WidgetTester tester, String key) {
+  final field = tester.widget<TextFormField>(find.byKey(ValueKey(key)));
+
+  return field.controller?.text ?? '';
 }
