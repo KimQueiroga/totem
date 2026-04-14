@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 
 import '../models/client_authentication.dart';
 import '../models/pre_attendance.dart';
@@ -378,7 +379,11 @@ class _EmptyGuidesMessage extends StatelessWidget {
   Widget build(BuildContext context) {
     return LayoutBuilder(
       builder: (context, constraints) {
-        final compact = constraints.maxHeight < 260;
+        final compact = constraints.maxHeight < 230;
+        final small = constraints.maxHeight < 300;
+        final illustrationWidth = small ? 220.0 : 300.0;
+        final illustrationHeight = small ? 164.0 : 224.0;
+        final illustrationGap = small ? 16.0 : 24.0;
 
         return Center(
           child: SingleChildScrollView(
@@ -388,8 +393,12 @@ class _EmptyGuidesMessage extends StatelessWidget {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   if (!compact) ...[
-                    _EmptyGuidesIllustration(primaryColor: primaryColor),
-                    const SizedBox(height: 24),
+                    _EmptyGuidesIllustration(
+                      primaryColor: primaryColor,
+                      width: illustrationWidth,
+                      height: illustrationHeight,
+                    ),
+                    SizedBox(height: illustrationGap),
                   ],
                   Text(
                     'Nenhum pre atendimento disponivel',
@@ -418,92 +427,26 @@ class _EmptyGuidesMessage extends StatelessWidget {
 }
 
 class _EmptyGuidesIllustration extends StatelessWidget {
-  const _EmptyGuidesIllustration({required this.primaryColor});
+  const _EmptyGuidesIllustration({
+    required this.primaryColor,
+    required this.width,
+    required this.height,
+  });
 
   final Color primaryColor;
+  final double width;
+  final double height;
 
   @override
   Widget build(BuildContext context) {
     return SizedBox(
-      width: 160,
-      height: 124,
-      child: Stack(
-        alignment: Alignment.center,
-        children: [
-          Positioned(
-            bottom: 10,
-            child: Container(
-              width: 142,
-              height: 18,
-              decoration: BoxDecoration(
-                color: Colors.black.withValues(alpha: 0.06),
-                borderRadius: BorderRadius.circular(8),
-              ),
-            ),
-          ),
-          Positioned(
-            top: 8,
-            child: Container(
-              width: 92,
-              height: 108,
-              decoration: BoxDecoration(
-                color: Colors.white,
-                border: Border.all(
-                  color: primaryColor.withValues(alpha: 0.32),
-                  width: 2,
-                ),
-                borderRadius: BorderRadius.circular(8),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.08),
-                    blurRadius: 16,
-                    offset: const Offset(0, 8),
-                  ),
-                ],
-              ),
-              child: Icon(
-                Icons.assignment_outlined,
-                color: primaryColor,
-                size: 54,
-              ),
-            ),
-          ),
-          Positioned(
-            right: 18,
-            bottom: 20,
-            child: Container(
-              width: 42,
-              height: 42,
-              decoration: BoxDecoration(
-                color: primaryColor,
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: Colors.white, width: 4),
-              ),
-              child: const Icon(
-                Icons.search_off_rounded,
-                color: Colors.white,
-                size: 24,
-              ),
-            ),
-          ),
-          Positioned(
-            left: 23,
-            top: 18,
-            child: Container(
-              width: 30,
-              height: 30,
-              decoration: BoxDecoration(
-                color: primaryColor.withValues(alpha: 0.12),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Icon(
-                Icons.event_busy_outlined,
-                color: primaryColor,
-                size: 20,
-              ),
-            ),
-          ),
-        ],
+      width: width,
+      height: height,
+      child: SvgPicture.asset(
+        'assets/images/empty_pre_attendance.svg',
+        fit: BoxFit.contain,
+        theme: SvgTheme(currentColor: primaryColor),
+        excludeFromSemantics: true,
       ),
     );
   }
