@@ -2,7 +2,7 @@
 
 Frontend Flutter do sistema de autoatendimento do laboratorio.
 
-## Requisitos
+## Requisitos testando assets
 
 - Flutter 3.35.1 ou superior
 - Dart 3.9.0 ou superior
