@@ -379,45 +379,44 @@ class _EmptyGuidesMessage extends StatelessWidget {
   Widget build(BuildContext context) {
     return LayoutBuilder(
       builder: (context, constraints) {
-        final compact = constraints.maxHeight < 230;
-        final small = constraints.maxHeight < 300;
-        final illustrationWidth = small ? 220.0 : 300.0;
-        final illustrationHeight = small ? 164.0 : 224.0;
-        final illustrationGap = small ? 16.0 : 24.0;
+        final showIllustration = constraints.maxHeight >= 210;
+        final illustrationHeight = (constraints.maxHeight * 0.42)
+            .clamp(112.0, 176.0)
+            .toDouble();
+        final illustrationWidth = illustrationHeight * 1.34;
+        final illustrationGap = constraints.maxHeight < 280 ? 12.0 : 18.0;
 
         return Center(
-          child: SingleChildScrollView(
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 520),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  if (!compact) ...[
-                    _EmptyGuidesIllustration(
-                      primaryColor: primaryColor,
-                      width: illustrationWidth,
-                      height: illustrationHeight,
-                    ),
-                    SizedBox(height: illustrationGap),
-                  ],
-                  Text(
-                    'Nenhum pre atendimento disponivel',
-                    textAlign: TextAlign.center,
-                    style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                      color: primaryColor,
-                      fontWeight: FontWeight.w700,
-                    ),
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 520),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                if (showIllustration) ...[
+                  _EmptyGuidesIllustration(
+                    primaryColor: primaryColor,
+                    width: illustrationWidth,
+                    height: illustrationHeight,
                   ),
-                  const SizedBox(height: 10),
-                  Text(
-                    'Confira os dados do paciente ou procure a recepcao para continuar.',
-                    textAlign: TextAlign.center,
-                    style: Theme.of(
-                      context,
-                    ).textTheme.titleMedium?.copyWith(color: Colors.black87),
-                  ),
+                  SizedBox(height: illustrationGap),
                 ],
-              ),
+                Text(
+                  'Nenhum pre atendimento disponivel',
+                  textAlign: TextAlign.center,
+                  style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                    color: primaryColor,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                const SizedBox(height: 10),
+                Text(
+                  'Confira os dados do paciente ou procure a recepcao para continuar.',
+                  textAlign: TextAlign.center,
+                  style: Theme.of(
+                    context,
+                  ).textTheme.titleMedium?.copyWith(color: Colors.black87),
+                ),
+              ],
             ),
           ),
         );
