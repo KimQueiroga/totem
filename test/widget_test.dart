@@ -58,12 +58,13 @@ void main() {
 
   test('parses pre attendance response with unquoted contact phone', () {
     final query = PreAttendanceQuery.fromResponseBody(
-      '{"ConsultaResult":{"mensagem":"ok","status":"0","preAtendimentos":[{"numeroPreAtendimento":152912,"guias":[{"autorizacao":{"senha":4654652},"numeroGuiaOperadora":34534534,"solicitante":{"nome":"MARCO TULIO"},"exames":[]}],"paciente":{"codigo":61,"telefone":3131-3131}}]}}',
+      '{"ConsultaResult":{"mensagem":"ok","status":"0","preAtendimentos":[{"numeroPreAtendimento":152912,"tipo":"AC","guias":[{"autorizacao":{"senha":4654652},"numeroGuiaOperadora":34534534,"solicitante":{"nome":"MARCO TULIO"},"exames":[]}],"paciente":{"codigo":61,"telefone":3131-3131}}]}}',
     );
 
     expect(query.status, '0');
     expect(query.guides.single.operatorGuideNumber, '34534534');
     expect(query.guides.single.authorizationPassword, '4654652');
+    expect(query.guides.single.type, 'AC');
   });
 
   test('parses pre attendance response with other unquoted scalar values', () {
@@ -72,6 +73,7 @@ void main() {
     );
 
     expect(query.status, '0');
+    expect(query.guides.single.type, isEmpty);
     expect(query.guides.single.issueDate, '2026-04-13');
     expect(query.guides.single.exams.single.code, '000123');
   });

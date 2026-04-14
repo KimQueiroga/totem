@@ -76,12 +76,14 @@ class PreAttendanceGuidesContent extends StatelessWidget {
                             return _GuideList(
                               guides: guides,
                               primaryColor: primaryColor,
+                              buttonColor: buttonColor,
                             );
                           }
 
                           return _GuideTable(
                             guides: guides,
                             primaryColor: primaryColor,
+                            buttonColor: buttonColor,
                           );
                         },
                       ),
@@ -177,10 +179,15 @@ class _SummaryLine extends StatelessWidget {
 }
 
 class _GuideTable extends StatelessWidget {
-  const _GuideTable({required this.guides, required this.primaryColor});
+  const _GuideTable({
+    required this.guides,
+    required this.primaryColor,
+    required this.buttonColor,
+  });
 
   final List<PreAttendanceGuide> guides;
   final Color primaryColor;
+  final Color buttonColor;
 
   @override
   Widget build(BuildContext context) {
@@ -236,8 +243,12 @@ class _GuideTable extends StatelessWidget {
                                   borderRadius: BorderRadius.circular(8),
                                 ),
                               ),
-                              onPressed: () =>
-                                  _showGuideDetails(context, guide),
+                              onPressed: () => _showGuideDetails(
+                                context,
+                                guide,
+                                primaryColor,
+                                buttonColor,
+                              ),
                               child: const Text('Ver detalhes'),
                             ),
                           ),
@@ -269,10 +280,15 @@ class _TableText extends StatelessWidget {
 }
 
 class _GuideList extends StatelessWidget {
-  const _GuideList({required this.guides, required this.primaryColor});
+  const _GuideList({
+    required this.guides,
+    required this.primaryColor,
+    required this.buttonColor,
+  });
 
   final List<PreAttendanceGuide> guides;
   final Color primaryColor;
+  final Color buttonColor;
 
   @override
   Widget build(BuildContext context) {
@@ -311,7 +327,12 @@ class _GuideList extends StatelessWidget {
                       borderRadius: BorderRadius.circular(8),
                     ),
                   ),
-                  onPressed: () => _showGuideDetails(context, guide),
+                  onPressed: () => _showGuideDetails(
+                    context,
+                    guide,
+                    primaryColor,
+                    buttonColor,
+                  ),
                   child: const Text('Ver detalhes'),
                 ),
               ],
@@ -355,14 +376,134 @@ class _EmptyGuidesMessage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Center(
-      child: Text(
-        'Nenhuma guia de pre atendimento encontrada.',
-        textAlign: TextAlign.center,
-        style: Theme.of(context).textTheme.titleLarge?.copyWith(
-          color: primaryColor,
-          fontWeight: FontWeight.w700,
-        ),
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final compact = constraints.maxHeight < 260;
+
+        return Center(
+          child: SingleChildScrollView(
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 520),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  if (!compact) ...[
+                    _EmptyGuidesIllustration(primaryColor: primaryColor),
+                    const SizedBox(height: 24),
+                  ],
+                  Text(
+                    'Nenhum pre atendimento disponivel',
+                    textAlign: TextAlign.center,
+                    style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                      color: primaryColor,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  Text(
+                    'Confira os dados do paciente ou procure a recepcao para continuar.',
+                    textAlign: TextAlign.center,
+                    style: Theme.of(
+                      context,
+                    ).textTheme.titleMedium?.copyWith(color: Colors.black87),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+}
+
+class _EmptyGuidesIllustration extends StatelessWidget {
+  const _EmptyGuidesIllustration({required this.primaryColor});
+
+  final Color primaryColor;
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: 160,
+      height: 124,
+      child: Stack(
+        alignment: Alignment.center,
+        children: [
+          Positioned(
+            bottom: 10,
+            child: Container(
+              width: 142,
+              height: 18,
+              decoration: BoxDecoration(
+                color: Colors.black.withValues(alpha: 0.06),
+                borderRadius: BorderRadius.circular(8),
+              ),
+            ),
+          ),
+          Positioned(
+            top: 8,
+            child: Container(
+              width: 92,
+              height: 108,
+              decoration: BoxDecoration(
+                color: Colors.white,
+                border: Border.all(
+                  color: primaryColor.withValues(alpha: 0.32),
+                  width: 2,
+                ),
+                borderRadius: BorderRadius.circular(8),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.08),
+                    blurRadius: 16,
+                    offset: const Offset(0, 8),
+                  ),
+                ],
+              ),
+              child: Icon(
+                Icons.assignment_outlined,
+                color: primaryColor,
+                size: 54,
+              ),
+            ),
+          ),
+          Positioned(
+            right: 18,
+            bottom: 20,
+            child: Container(
+              width: 42,
+              height: 42,
+              decoration: BoxDecoration(
+                color: primaryColor,
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: Colors.white, width: 4),
+              ),
+              child: const Icon(
+                Icons.search_off_rounded,
+                color: Colors.white,
+                size: 24,
+              ),
+            ),
+          ),
+          Positioned(
+            left: 23,
+            top: 18,
+            child: Container(
+              width: 30,
+              height: 30,
+              decoration: BoxDecoration(
+                color: primaryColor.withValues(alpha: 0.12),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Icon(
+                Icons.event_busy_outlined,
+                color: primaryColor,
+                size: 20,
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -431,12 +572,24 @@ class _ActionButtons extends StatelessWidget {
   }
 }
 
-void _showGuideDetails(BuildContext context, PreAttendanceGuide guide) {
+void _showGuideDetails(
+  BuildContext context,
+  PreAttendanceGuide guide,
+  Color primaryColor,
+  Color buttonColor,
+) {
   showDialog<void>(
     context: context,
     builder: (context) {
       return AlertDialog(
-        title: const Text('Detalhes da guia'),
+        title: Text(
+          'Detalhes da guia',
+          style: TextStyle(color: primaryColor, fontWeight: FontWeight.w700),
+        ),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(8),
+          side: BorderSide(color: primaryColor.withValues(alpha: 0.24)),
+        ),
         content: SizedBox(
           width: 520,
           child: SingleChildScrollView(
@@ -449,6 +602,7 @@ void _showGuideDetails(BuildContext context, PreAttendanceGuide guide) {
                   label: 'Pre atendimento',
                   value: guide.preAttendanceNumber,
                 ),
+                _GuideValue(label: 'Tipo', value: guide.type),
                 _GuideValue(
                   label: 'Autorizacao',
                   value: guide.authorizationPassword,
@@ -461,6 +615,7 @@ void _showGuideDetails(BuildContext context, PreAttendanceGuide guide) {
                 Text(
                   'Exames',
                   style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    color: primaryColor,
                     fontWeight: FontWeight.w700,
                   ),
                 ),
@@ -481,6 +636,7 @@ void _showGuideDetails(BuildContext context, PreAttendanceGuide guide) {
         ),
         actions: [
           TextButton(
+            style: TextButton.styleFrom(foregroundColor: buttonColor),
             onPressed: () => Navigator.of(context).pop(),
             child: const Text('Fechar'),
           ),

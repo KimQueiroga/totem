@@ -36,7 +36,10 @@ class PreAttendanceQuery {
     return [
       for (final preAttendance in preAttendances)
         for (final guide in preAttendance.guides)
-          guide.copyWith(preAttendanceNumber: preAttendance.number),
+          guide.copyWith(
+            preAttendanceNumber: preAttendance.number,
+            type: preAttendance.type,
+          ),
     ];
   }
 }
@@ -129,6 +132,7 @@ class PreAttendanceGuide {
     required this.issueDate,
     required this.exams,
     this.preAttendanceNumber = '',
+    this.type = '',
   });
 
   factory PreAttendanceGuide.fromJson(Map<String, dynamic> json) {
@@ -155,15 +159,17 @@ class PreAttendanceGuide {
   }
 
   final String preAttendanceNumber;
+  final String type;
   final String operatorGuideNumber;
   final String authorizationPassword;
   final String requesterName;
   final String issueDate;
   final List<PreAttendanceExam> exams;
 
-  PreAttendanceGuide copyWith({String? preAttendanceNumber}) {
+  PreAttendanceGuide copyWith({String? preAttendanceNumber, String? type}) {
     return PreAttendanceGuide(
       preAttendanceNumber: preAttendanceNumber ?? this.preAttendanceNumber,
+      type: type ?? this.type,
       operatorGuideNumber: operatorGuideNumber,
       authorizationPassword: authorizationPassword,
       requesterName: requesterName,
