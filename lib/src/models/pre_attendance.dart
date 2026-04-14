@@ -61,17 +61,31 @@ Map<String, dynamic> _decodePreAttendanceBody(String body) {
 }
 
 String _repairPreAttendanceJson(String body) {
-  final unquotedContactValue = RegExp(
-    r'("(?:telefone|celular)"\s*:\s*)(?!["{\[]|null\b|true\b|false\b)([^,}\]]*)',
+  final unquotedScalarValue = RegExp(
+    r'("[^"\\]*(?:\\.[^"\\]*)*"\s*:\s*)(?!["{\[]|null\b|true\b|false\b)([^,}\]]*)',
     caseSensitive: false,
   );
 
-  return body.replaceAllMapped(unquotedContactValue, (match) {
+  return body.replaceAllMapped(unquotedScalarValue, (match) {
     final prefix = match.group(1)!;
     final value = match.group(2)!.trim();
 
-    return '$prefix${value.isEmpty ? 'null' : jsonEncode(value)}';
+    if (value.isEmpty) {
+      return '${prefix}null';
+    }
+
+    return '$prefix${_isJsonScalar(value) ? value : jsonEncode(value)}';
   });
+}
+
+bool _isJsonScalar(String value) {
+  try {
+    jsonDecode('[$value]');
+
+    return true;
+  } on FormatException {
+    return false;
+  }
 }
 
 class PreAttendance {

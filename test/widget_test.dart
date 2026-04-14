@@ -66,6 +66,16 @@ void main() {
     expect(query.guides.single.authorizationPassword, '4654652');
   });
 
+  test('parses pre attendance response with other unquoted scalar values', () {
+    final query = PreAttendanceQuery.fromResponseBody(
+      '{"ConsultaResult":{"mensagem":"ok","status":"0","preAtendimentos":[{"numeroPreAtendimento":152912,"guias":[{"autorizacao":{"senha":4654652},"numeroGuiaOperadora":34534534,"solicitante":{"nome":"MARCO TULIO"},"dataEmissao":2026-04-13,"exames":[{"codigoExame":000123,"descricaoExame":"HEMOGRAMA","descricaoMaterial":"SANGUE"}]}],"paciente":{"codigo":61,"telefone":3131-3131}}]}}',
+    );
+
+    expect(query.status, '0');
+    expect(query.guides.single.issueDate, '2026-04-13');
+    expect(query.guides.single.exams.single.code, '000123');
+  });
+
   testWidgets('renders autoatendimento start screen from visual identity', (
     tester,
   ) async {
