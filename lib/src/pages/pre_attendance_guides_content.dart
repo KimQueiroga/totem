@@ -184,57 +184,72 @@ class _GuideTable extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return DecoratedBox(
-      decoration: BoxDecoration(
-        border: Border.all(color: Colors.black12),
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: SingleChildScrollView(
-        child: SingleChildScrollView(
-          scrollDirection: Axis.horizontal,
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(minWidth: 760),
-            child: DataTable(
-              headingRowColor: WidgetStatePropertyAll(
-                primaryColor.withValues(alpha: 0.08),
-              ),
-              columns: const [
-                DataColumn(label: Text('Guia')),
-                DataColumn(label: Text('Autorizacao')),
-                DataColumn(label: Text('Medico solicitante')),
-                DataColumn(label: Text('Detalhes')),
-              ],
-              rows: [
-                for (final guide in guides)
-                  DataRow(
-                    cells: [
-                      DataCell(
-                        _TableText(_displayValue(guide.operatorGuideNumber)),
-                      ),
-                      DataCell(
-                        _TableText(_displayValue(guide.authorizationPassword)),
-                      ),
-                      DataCell(_TableText(_displayValue(guide.requesterName))),
-                      DataCell(
-                        OutlinedButton(
-                          style: OutlinedButton.styleFrom(
-                            foregroundColor: primaryColor,
-                            side: BorderSide(color: primaryColor),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(8),
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final tableMinWidth = constraints.maxWidth > 760
+            ? constraints.maxWidth
+            : 760.0;
+
+        return DecoratedBox(
+          decoration: BoxDecoration(
+            border: Border.all(color: Colors.black12),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: SingleChildScrollView(
+            child: SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: ConstrainedBox(
+                constraints: BoxConstraints(minWidth: tableMinWidth),
+                child: DataTable(
+                  headingRowColor: WidgetStatePropertyAll(
+                    primaryColor.withValues(alpha: 0.08),
+                  ),
+                  columns: const [
+                    DataColumn(label: Text('Guia')),
+                    DataColumn(label: Text('Autorizacao')),
+                    DataColumn(label: Text('Medico solicitante')),
+                    DataColumn(label: Text('Detalhes')),
+                  ],
+                  rows: [
+                    for (final guide in guides)
+                      DataRow(
+                        cells: [
+                          DataCell(
+                            _TableText(
+                              _displayValue(guide.operatorGuideNumber),
                             ),
                           ),
-                          onPressed: () => _showGuideDetails(context, guide),
-                          child: const Text('Ver detalhes'),
-                        ),
+                          DataCell(
+                            _TableText(
+                              _displayValue(guide.authorizationPassword),
+                            ),
+                          ),
+                          DataCell(
+                            _TableText(_displayValue(guide.requesterName)),
+                          ),
+                          DataCell(
+                            OutlinedButton(
+                              style: OutlinedButton.styleFrom(
+                                foregroundColor: primaryColor,
+                                side: BorderSide(color: primaryColor),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                              ),
+                              onPressed: () =>
+                                  _showGuideDetails(context, guide),
+                              child: const Text('Ver detalhes'),
+                            ),
+                          ),
+                        ],
                       ),
-                    ],
-                  ),
-              ],
+                  ],
+                ),
+              ),
             ),
           ),
-        ),
-      ),
+        );
+      },
     );
   }
 }
