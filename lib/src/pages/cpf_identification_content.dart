@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+
 import '../models/terminal_visual_identity.dart';
 import '../widgets/flow_top_bar.dart';
 import '../widgets/numeric_touch_keyboard.dart';
@@ -255,9 +257,7 @@ class _CpfIdentificationContentState extends State<CpfIdentificationContent> {
                               TextFormField(
                                 key: const ValueKey('cpf-identification-cpf'),
                                 controller: _cpfController,
-                                readOnly: true,
                                 showCursor: true,
-                                canRequestFocus: false,
                                 onTap: () => _setActiveField(
                                   _CpfIdentificationField.cpf,
                                 ),
@@ -266,6 +266,21 @@ class _CpfIdentificationContentState extends State<CpfIdentificationContent> {
                                   field: _CpfIdentificationField.cpf,
                                 ),
                                 keyboardType: TextInputType.number,
+                                inputFormatters: [
+                                  FilteringTextInputFormatter.digitsOnly,
+                                  TextInputFormatter.withFunction(
+                                    (oldValue, newValue) {
+                                      final digits = _digitsOnly(newValue.text);
+                                      final formatted = _formatCpf(digits);
+                                      return TextEditingValue(
+                                        text: formatted,
+                                        selection: TextSelection.collapsed(
+                                          offset: formatted.length,
+                                        ),
+                                      );
+                                    },
+                                  ),
+                                ],
                                 validator: (value) {
                                   return _digitsOnly(value ?? '').length == 11
                                       ? null
@@ -278,9 +293,7 @@ class _CpfIdentificationContentState extends State<CpfIdentificationContent> {
                                   'cpf-identification-birth-date',
                                 ),
                                 controller: _birthDateController,
-                                readOnly: true,
                                 showCursor: true,
-                                canRequestFocus: false,
                                 onTap: () => _setActiveField(
                                   _CpfIdentificationField.birthDate,
                                 ),
@@ -290,6 +303,21 @@ class _CpfIdentificationContentState extends State<CpfIdentificationContent> {
                                   hint: 'DD/MM/AAAA',
                                 ),
                                 keyboardType: TextInputType.number,
+                                inputFormatters: [
+                                  FilteringTextInputFormatter.digitsOnly,
+                                  TextInputFormatter.withFunction(
+                                    (oldValue, newValue) {
+                                      final digits = _digitsOnly(newValue.text);
+                                      final formatted = _formatDate(digits);
+                                      return TextEditingValue(
+                                        text: formatted,
+                                        selection: TextSelection.collapsed(
+                                          offset: formatted.length,
+                                        ),
+                                      );
+                                    },
+                                  ),
+                                ],
                                 validator: (value) {
                                   return _digitsOnly(value ?? '').length == 8
                                       ? null
@@ -302,9 +330,7 @@ class _CpfIdentificationContentState extends State<CpfIdentificationContent> {
                                   'cpf-identification-password',
                                 ),
                                 controller: _passwordController,
-                                readOnly: true,
                                 showCursor: true,
-                                canRequestFocus: false,
                                 onTap: () => _setActiveField(
                                   _CpfIdentificationField.password,
                                 ),
