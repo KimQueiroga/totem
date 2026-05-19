@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../models/client_authentication.dart';
+import '../models/exam_search.dart';
 import '../models/pre_attendance.dart';
 import '../models/terminal_context.dart';
 import '../models/terminal_visual_identity.dart';
@@ -12,6 +13,7 @@ import '../widgets/terminal_not_found_content.dart';
 import 'cpf_identification_content.dart';
 import 'client_confirmation_content.dart';
 import 'identification_options_content.dart';
+import 'pre_attendance_exams_content.dart';
 import 'pre_attendance_guides_content.dart';
 import 'service_selection_content.dart';
 import 'terminal_home_content.dart';
@@ -45,6 +47,8 @@ class _HomePageState extends State<HomePage> {
   Future<TerminalContext>? _terminalContext;
   ClientAuthentication? _clientAuthentication;
   Future<PreAttendanceQuery>? _preAttendance;
+  PreAttendanceGuide? _selectedGuide;
+  Future<List<ProcedureExamSearch>>? _selectedGuideExamSearch;
   bool _isAuthenticatingClient = false;
   String? _clientAuthenticationErrorMessage;
   int _clientAuthenticationFailureCount = 0;
@@ -98,6 +102,8 @@ class _HomePageState extends State<HomePage> {
       _selectedService = null;
       _clientAuthentication = null;
       _preAttendance = null;
+      _selectedGuide = null;
+      _selectedGuideExamSearch = null;
       _isAuthenticatingClient = false;
       _clientAuthenticationErrorMessage = null;
       _selectedIdentificationOption = null;
@@ -118,6 +124,8 @@ class _HomePageState extends State<HomePage> {
     setState(() {
       _clientAuthentication = null;
       _preAttendance = null;
+      _selectedGuide = null;
+      _selectedGuideExamSearch = null;
       _isAuthenticatingClient = false;
       _clientAuthenticationErrorMessage = null;
     });
@@ -199,6 +207,60 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
+  void _handleSelectPreAttendanceGuide(PreAttendanceGuide guide) {
+    setState(() {
+      _selectedGuide = guide;
+    });
+  }
+
+  Future<void> _handlePreAttendanceNext() async {
+    if (_selectedGuide == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Selecione um pre atendimento antes de avancar.'),
+        ),
+      );
+      return;
+    }
+
+    setState(() {
+      _selectedGuideExamSearch = _searchExamsForGuide(_selectedGuide!);
+    });
+  }
+
+  Future<List<ProcedureExamSearch>> _searchExamsForGuide(
+    PreAttendanceGuide guide,
+  ) async {
+    final keywords = guide.exams
+        .map((exam) => exam.code.trim())
+        .where((keyword) => keyword.isNotEmpty)
+        .toList();
+
+    return Future.wait(
+      keywords.map((keyword) async {
+        try {
+          final results = await fetchExamSearch(
+            keyword,
+            _clientAuthentication?.token,
+          );
+          return ProcedureExamSearch(keyword: keyword, results: results);
+        } catch (error) {
+          return ProcedureExamSearch(
+            keyword: keyword,
+            results: const [],
+            error: error.toString(),
+          );
+        }
+      }),
+    );
+  }
+
+  void _handlePreAttendanceBackToSelection() {
+    setState(() {
+      _selectedGuideExamSearch = null;
+    });
+  }
+
   Future<void> _handleClientConfirmation(
     ClientProfileUpdate profileUpdate,
   ) async {
@@ -247,6 +309,8 @@ class _HomePageState extends State<HomePage> {
         clientId,
         _clientAuthentication?.token,
       );
+      _selectedGuide = null;
+      _selectedGuideExamSearch = null;
     });
   }
 
@@ -337,6 +401,25 @@ class _HomePageState extends State<HomePage> {
                           );
                         }
 
+                        if (_selectedGuideExamSearch != null &&
+                            _selectedGuide != null) {
+                          return PageScaffold(
+                            alignment: Alignment.topCenter,
+                            identity: identity,
+                            maxWidth: 980,
+                            scrollable: false,
+                            child: PreAttendanceExamsContent(
+                              identity: identity,
+                              flowTitle: 'Checkin Pre Atendimento',
+                              authentication: clientAuthentication,
+                              guide: _selectedGuide!,
+                              examSearchFuture: _selectedGuideExamSearch!,
+                              onBack: _handlePreAttendanceBackToSelection,
+                              onHome: _backToHome,
+                            ),
+                          );
+                        }
+
                         return PageScaffold(
                           alignment: Alignment.topCenter,
                           identity: identity,
@@ -347,22 +430,17 @@ class _HomePageState extends State<HomePage> {
                             flowTitle: 'Checkin Pre Atendimento',
                             authentication: clientAuthentication,
                             preAttendance: preAttendanceSnapshot.data!,
+                            selectedGuide: _selectedGuide,
+                            onSelectGuide: _handleSelectPreAttendanceGuide,
                             onBack: () {
                               setState(() {
                                 _preAttendance = null;
+                                _selectedGuide = null;
                               });
                             },
                             onHome: _backToHome,
                             onCancel: _backToCpfIdentification,
-                            onNext: () {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
-                                  content: Text(
-                                    'Avanco do pre atendimento ainda nao disponivel.',
-                                  ),
-                                ),
-                              );
-                            },
+                            onNext: _handlePreAttendanceNext,
                           ),
                         );
                       },

@@ -13,6 +13,8 @@ class PreAttendanceGuidesContent extends StatelessWidget {
     required this.flowTitle,
     required this.authentication,
     required this.preAttendance,
+    required this.selectedGuide,
+    required this.onSelectGuide,
     required this.onBack,
     required this.onHome,
     required this.onCancel,
@@ -23,6 +25,8 @@ class PreAttendanceGuidesContent extends StatelessWidget {
   final String flowTitle;
   final ClientAuthentication authentication;
   final PreAttendanceQuery preAttendance;
+  final PreAttendanceGuide? selectedGuide;
+  final void Function(PreAttendanceGuide guide) onSelectGuide;
   final VoidCallback onBack;
   final VoidCallback onHome;
   final VoidCallback onCancel;
@@ -76,15 +80,19 @@ class PreAttendanceGuidesContent extends StatelessWidget {
                           if (constraints.maxWidth < 720) {
                             return _GuideList(
                               guides: guides,
+                              selectedGuide: selectedGuide,
                               primaryColor: primaryColor,
                               buttonColor: buttonColor,
+                              onSelectGuide: onSelectGuide,
                             );
                           }
 
                           return _GuideTable(
                             guides: guides,
+                            selectedGuide: selectedGuide,
                             primaryColor: primaryColor,
                             buttonColor: buttonColor,
+                            onSelectGuide: onSelectGuide,
                           );
                         },
                       ),
@@ -94,7 +102,7 @@ class PreAttendanceGuidesContent extends StatelessWidget {
                 primaryColor: primaryColor,
                 buttonColor: buttonColor,
                 onCancel: onCancel,
-                onNext: guides.isEmpty ? null : onNext,
+                onNext: selectedGuide == null ? null : onNext,
               ),
             ],
           ),
@@ -182,11 +190,15 @@ class _SummaryLine extends StatelessWidget {
 class _GuideTable extends StatelessWidget {
   const _GuideTable({
     required this.guides,
+    required this.selectedGuide,
+    required this.onSelectGuide,
     required this.primaryColor,
     required this.buttonColor,
   });
 
   final List<PreAttendanceGuide> guides;
+  final PreAttendanceGuide? selectedGuide;
+  final void Function(PreAttendanceGuide guide) onSelectGuide;
   final Color primaryColor;
   final Color buttonColor;
 
@@ -221,6 +233,8 @@ class _GuideTable extends StatelessWidget {
                   rows: [
                     for (final guide in guides)
                       DataRow(
+                        selected: selectedGuide == guide,
+                        onSelectChanged: (_) => onSelectGuide(guide),
                         cells: [
                           DataCell(
                             _TableText(
@@ -283,11 +297,15 @@ class _TableText extends StatelessWidget {
 class _GuideList extends StatelessWidget {
   const _GuideList({
     required this.guides,
+    required this.selectedGuide,
+    required this.onSelectGuide,
     required this.primaryColor,
     required this.buttonColor,
   });
 
   final List<PreAttendanceGuide> guides;
+  final PreAttendanceGuide? selectedGuide;
+  final void Function(PreAttendanceGuide guide) onSelectGuide;
   final Color primaryColor;
   final Color buttonColor;
 
@@ -299,44 +317,52 @@ class _GuideList extends StatelessWidget {
       itemBuilder: (context, index) {
         final guide = guides[index];
 
-        return DecoratedBox(
-          decoration: BoxDecoration(
-            color: Colors.white,
-            border: Border.all(color: Colors.black12),
-            borderRadius: BorderRadius.circular(8),
-          ),
-          child: Padding(
-            padding: const EdgeInsets.all(14),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                _GuideValue(label: 'Guia', value: guide.operatorGuideNumber),
-                _GuideValue(
-                  label: 'Autorizacao',
-                  value: guide.authorizationPassword,
-                ),
-                _GuideValue(
-                  label: 'Medico solicitante',
-                  value: guide.requesterName,
-                ),
-                const SizedBox(height: 8),
-                OutlinedButton(
-                  style: OutlinedButton.styleFrom(
-                    foregroundColor: primaryColor,
-                    side: BorderSide(color: primaryColor),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
+        return GestureDetector(
+          onTap: () => onSelectGuide(guide),
+          child: DecoratedBox(
+            decoration: BoxDecoration(
+              color: selectedGuide == guide
+                  ? primaryColor.withOpacity(0.08)
+                  : Colors.white,
+              border: Border.all(
+                color: selectedGuide == guide ? primaryColor : Colors.black12,
+                width: selectedGuide == guide ? 2 : 1,
+              ),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Padding(
+              padding: const EdgeInsets.all(14),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _GuideValue(label: 'Guia', value: guide.operatorGuideNumber),
+                  _GuideValue(
+                    label: 'Autorizacao',
+                    value: guide.authorizationPassword,
+                  ),
+                  _GuideValue(
+                    label: 'Medico solicitante',
+                    value: guide.requesterName,
+                  ),
+                  const SizedBox(height: 8),
+                  OutlinedButton(
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: primaryColor,
+                      side: BorderSide(color: primaryColor),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
                     ),
+                    onPressed: () => _showGuideDetails(
+                      context,
+                      guide,
+                      primaryColor,
+                      buttonColor,
+                    ),
+                    child: const Text('Ver detalhes'),
                   ),
-                  onPressed: () => _showGuideDetails(
-                    context,
-                    guide,
-                    primaryColor,
-                    buttonColor,
-                  ),
-                  child: const Text('Ver detalhes'),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
         );
