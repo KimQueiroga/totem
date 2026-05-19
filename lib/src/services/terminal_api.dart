@@ -162,9 +162,17 @@ Future<PreAttendanceQuery> fetchPreAttendance(
 
 Future<List<ExamSearchResult>> fetchExamSearch(
   String keyword,
-  String? clientToken,
-) async {
-  final queryParameters = <String, String>{'keyword': keyword};
+  String? clientToken, {
+  String? healthPlan,
+  String? unit,
+}) async {
+  final queryParameters = <String, String>{
+    'keyword': keyword,
+    'healthPlan': (healthPlan != null && healthPlan.isNotEmpty)
+        ? healthPlan
+        : 'UNREG',
+    'unit': (unit != null && unit.isNotEmpty) ? unit : '1',
+  };
 
   if (clientToken != null && clientToken.isNotEmpty) {
     queryParameters['clientToken'] = clientToken;

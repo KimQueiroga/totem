@@ -131,6 +131,7 @@ class PreAttendanceGuide {
     required this.requesterName,
     required this.issueDate,
     required this.exams,
+    this.healthPlan = '',
     this.preAttendanceNumber = '',
     this.type = '',
   });
@@ -149,6 +150,7 @@ class PreAttendanceGuide {
           ? requester['nome']?.toString() ?? ''
           : '',
       issueDate: json['dataEmissao']?.toString() ?? '',
+      healthPlan: _extractHealthPlan(json),
       exams: exams is List
           ? exams
                 .whereType<Map<String, dynamic>>()
@@ -164,9 +166,14 @@ class PreAttendanceGuide {
   final String authorizationPassword;
   final String requesterName;
   final String issueDate;
+  final String healthPlan;
   final List<PreAttendanceExam> exams;
 
-  PreAttendanceGuide copyWith({String? preAttendanceNumber, String? type}) {
+  PreAttendanceGuide copyWith({
+    String? preAttendanceNumber,
+    String? type,
+    String? healthPlan,
+  }) {
     return PreAttendanceGuide(
       preAttendanceNumber: preAttendanceNumber ?? this.preAttendanceNumber,
       type: type ?? this.type,
@@ -174,9 +181,40 @@ class PreAttendanceGuide {
       authorizationPassword: authorizationPassword,
       requesterName: requesterName,
       issueDate: issueDate,
+      healthPlan: healthPlan ?? this.healthPlan,
       exams: exams,
     );
   }
+}
+
+String _extractHealthPlan(Map<String, dynamic> json) {
+  final candidate = json['operadora'] ??
+      json['convenio'] ??
+      json['codigoConvenio'] ??
+      json['codigoOperadora'] ??
+      json['idOperadora'];
+
+  if (candidate is String && candidate.isNotEmpty) {
+    return candidate;
+  }
+
+  if (candidate is num) {
+    return candidate.toString();
+  }
+
+  if (candidate is Map<String, dynamic>) {
+    for (final key in ['codigo', 'id', 'nome', 'sigla']) {
+      final nested = candidate[key];
+      if (nested is String && nested.isNotEmpty) {
+        return nested;
+      }
+      if (nested is num) {
+        return nested.toString();
+      }
+    }
+  }
+
+  return '';
 }
 
 class PreAttendanceExam {

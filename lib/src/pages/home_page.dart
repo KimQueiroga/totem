@@ -242,6 +242,8 @@ class _HomePageState extends State<HomePage> {
           final results = await fetchExamSearch(
             keyword,
             _clientAuthentication?.token,
+            healthPlan: guide.healthPlan.isNotEmpty ? guide.healthPlan : null,
+            unit: '1',
           );
           return ProcedureExamSearch(keyword: keyword, results: results);
         } catch (error) {
