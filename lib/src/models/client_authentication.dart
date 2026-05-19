@@ -3,6 +3,7 @@ class ClientAuthentication {
     required this.id,
     required this.millisecondsToExpire,
     required this.user,
+    required this.token,
   });
 
   factory ClientAuthentication.fromJson(Map<String, dynamic> json) {
@@ -16,12 +17,14 @@ class ClientAuthentication {
       id: json['id']?.toString() ?? '',
       millisecondsToExpire: _intValue(json['milisecondsToExpire']) ?? 0,
       user: ClientUser.fromJson(user),
+      token: _extractClientToken(json),
     );
   }
 
   final String id;
   final int millisecondsToExpire;
   final ClientUser user;
+  final String token;
 }
 
 class ClientUser {
@@ -216,6 +219,26 @@ class ClientCredentials {
   final String cpf;
   final String password;
   final String birthDate;
+}
+
+String _extractClientToken(Map<String, dynamic> json) {
+  String? token;
+
+  if (json['token'] is String) {
+    token = json['token'] as String;
+  }
+
+  token ??= json['access_token'] as String?;
+  token ??= json['bearerToken'] as String?;
+
+  final dynamic data = json['data'];
+  if (data is Map<String, dynamic>) {
+    token ??= data['token'] as String?;
+    token ??= data['access_token'] as String?;
+    token ??= data['bearerToken'] as String?;
+  }
+
+  return token?.trim() ?? '';
 }
 
 int? _intValue(Object? value) {

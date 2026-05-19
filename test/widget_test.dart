@@ -141,6 +141,7 @@ void main() {
         authenticateClient: (_) async => const ClientAuthentication(
           id: '9614d1dc-22d7-d27e-8a05-252a65cdf2ea',
           millisecondsToExpire: 1200000,
+          token: '',
           user: ClientUser(
             fullName: 'FAKE BEN DEX I O\'NEAL',
             socialName: null,
@@ -204,6 +205,7 @@ void main() {
         authenticateClient: (_) async => const ClientAuthentication(
           id: '9614d1dc-22d7-d27e-8a05-252a65cdf2ea',
           millisecondsToExpire: 1200000,
+          token: '',
           user: ClientUser(
             fullName: 'FAKE BEN DEX I O\'NEAL',
             socialName: null,
@@ -265,6 +267,7 @@ void main() {
         authenticateClient: (_) async => const ClientAuthentication(
           id: '9614d1dc-22d7-d27e-8a05-252a65cdf2ea',
           millisecondsToExpire: 1200000,
+          token: '',
           user: ClientUser(
             clientId: '8035115166',
             fullName: 'FAKE BEN DEX I O\'NEAL',
@@ -283,7 +286,7 @@ void main() {
         updateClient: (profileUpdate) async {
           submittedUpdate = profileUpdate;
         },
-        loadPreAttendance: (_) async => const PreAttendanceQuery(
+        loadPreAttendance: (_, __) async => const PreAttendanceQuery(
           message: 'Processamento realizado com sucesso!',
           status: '0',
           preAttendances: [

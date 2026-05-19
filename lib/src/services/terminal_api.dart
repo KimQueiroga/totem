@@ -25,7 +25,7 @@ typedef ClientUpdater =
     Future<void> Function(ClientProfileUpdate profileUpdate);
 
 typedef PreAttendanceLoader =
-    Future<PreAttendanceQuery> Function(String clientId);
+    Future<PreAttendanceQuery> Function(String clientId, String? clientToken);
 
 Future<TerminalVisualIdentity> fetchTerminalVisualIdentity(
   String terminalName,
@@ -135,10 +135,16 @@ Future<void> updateClientProfile(ClientProfileUpdate profileUpdate) async {
   }
 }
 
-Future<PreAttendanceQuery> fetchPreAttendance(String clientId) async {
+Future<PreAttendanceQuery> fetchPreAttendance(String clientId, String? clientToken) async {
+  final queryParameters = <String, String>{'clientId': clientId};
+
+  if (clientToken != null && clientToken.isNotEmpty) {
+    queryParameters['clientToken'] = clientToken;
+  }
+
   final uri = Uri.parse(
     '$bffBaseUrl/pre-attendance',
-  ).replace(queryParameters: {'clientId': clientId});
+  ).replace(queryParameters: queryParameters);
   final response = await http.get(uri, headers: {'Accept': 'application/json'});
 
   if (response.statusCode < 200 || response.statusCode >= 300) {

@@ -243,7 +243,10 @@ class _HomePageState extends State<HomePage> {
     }
 
     setState(() {
-      _preAttendance = widget.loadPreAttendance(clientId);
+      _preAttendance = widget.loadPreAttendance(
+        clientId,
+        _clientAuthentication?.token,
+      );
     });
   }
 
