@@ -9,16 +9,42 @@ class ClientAuthentication {
   factory ClientAuthentication.fromJson(Map<String, dynamic> json) {
     final user = json['user'];
 
-    if (user is! Map<String, dynamic>) {
-      throw Exception('Resposta sem dados do cliente.');
+    if (user is Map<String, dynamic>) {
+      return ClientAuthentication(
+        id: json['id']?.toString() ?? '',
+        millisecondsToExpire: _intValue(json['milisecondsToExpire']) ?? 0,
+        user: ClientUser.fromJson(user),
+        token: _extractClientToken(json),
+      );
     }
 
-    return ClientAuthentication(
-      id: json['id']?.toString() ?? '',
-      millisecondsToExpire: _intValue(json['milisecondsToExpire']) ?? 0,
-      user: ClientUser.fromJson(user),
-      token: _extractClientToken(json),
-    );
+    if (_looksLikeClient(json)) {
+      return ClientAuthentication(
+        id: json['id']?.toString() ?? '',
+        millisecondsToExpire: 0,
+        user: ClientUser.fromJson(json),
+        token: _extractClientToken(json),
+      );
+    }
+
+    throw Exception('Resposta sem dados do cliente.');
+  }
+
+  factory ClientAuthentication.fromClientQueryPayload(Object? payload) {
+    if (payload is List) {
+      final clients = payload.whereType<Map<String, dynamic>>();
+      if (clients.isEmpty) {
+        throw Exception('Nenhum cliente encontrado.');
+      }
+
+      return ClientAuthentication.fromJson(clients.first);
+    }
+
+    if (payload is Map<String, dynamic>) {
+      return ClientAuthentication.fromJson(payload);
+    }
+
+    throw Exception('Resposta sem dados do cliente.');
   }
 
   final String id;
@@ -56,31 +82,43 @@ class ClientUser {
   });
 
   factory ClientUser.fromJson(Map<String, dynamic> json) {
+    final address = _nestedMap(json['address']);
+    final contacts = _nestedMap(json['contacts']);
+
     return ClientUser(
-      clientId: json['clienteId']?.toString(),
-      fullName: json['fullName']?.toString() ?? '',
+      clientId: (json['clienteId'] ?? json['id'])?.toString(),
+      fullName: (json['fullName'] ?? json['name'])?.toString() ?? '',
       socialName: json['socialName']?.toString(),
       cpf: json['cpf']?.toString() ?? '',
       birthDate: json['birthDate']?.toString() ?? '',
       gender: json['gender']?.toString(),
-      email: json['email']?.toString(),
-      mobilePhoneNumber: json['mobilePhoneNumber']?.toString(),
-      homePhoneNumber: json['homePhoneNumber']?.toString(),
+      email: (json['email'] ?? contacts?['email'])?.toString(),
+      mobilePhoneNumber:
+          (json['mobilePhoneNumber'] ??
+                  json['cellphone'] ??
+                  json['cellPhone'] ??
+                  contacts?['mainPhone'])
+              ?.toString(),
+      homePhoneNumber:
+          (json['homePhoneNumber'] ?? json['phone'] ?? contacts?['secondaryPhone'])
+              ?.toString(),
       workPhoneNumber: json['workPhoneNumber']?.toString(),
       fatherName: json['fatherName']?.toString(),
       motherName: json['motherName']?.toString(),
       responsibleName: json['responsibleName']?.toString(),
       nationality: json['nationality']?.toString(),
       documentType: json['documentType']?.toString(),
-      documentNumber: json['documentNumber']?.toString(),
-      street: json['street']?.toString(),
-      streetAndComplement: json['streetAndComplement']?.toString(),
-      numberStreet: json['numberStreet']?.toString(),
-      neighbourhood: json['neighbourhood']?.toString(),
-      complement: json['complement']?.toString(),
-      postalCode: json['postalCode']?.toString(),
-      city: json['city']?.toString(),
-      uf: json['uf']?.toString(),
+      documentNumber: (json['documentNumber'] ?? json['document'])?.toString(),
+      street: (json['street'] ?? address?['street'])?.toString(),
+      streetAndComplement:
+          (json['streetAndComplement'] ?? address?['street'])?.toString(),
+      numberStreet: (json['numberStreet'] ?? address?['number'])?.toString(),
+      neighbourhood:
+          (json['neighbourhood'] ?? address?['neighborhood'])?.toString(),
+      complement: (json['complement'] ?? address?['complement'])?.toString(),
+      postalCode: (json['postalCode'] ?? address?['zipCode'])?.toString(),
+      city: (json['city'] ?? address?['city'])?.toString(),
+      uf: (json['uf'] ?? address?['state'])?.toString(),
     );
   }
 
@@ -257,6 +295,18 @@ String _normalized(String? value) => value?.trim() ?? '';
 
 String _digitsOnly(String? value) =>
     (value ?? '').replaceAll(RegExp(r'\D'), '');
+
+bool _looksLikeClient(Map<String, dynamic> json) {
+  return json.containsKey('id') ||
+      json.containsKey('clienteId') ||
+      json.containsKey('cpf') ||
+      json.containsKey('name') ||
+      json.containsKey('fullName');
+}
+
+Map<String, dynamic>? _nestedMap(Object? value) {
+  return value is Map<String, dynamic> ? value : null;
+}
 
 _CityAndState _parseCityAndState(String value, ClientUser user) {
   final trimmedValue = value.trim();
