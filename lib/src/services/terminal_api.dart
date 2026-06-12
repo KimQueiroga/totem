@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:http/http.dart' as http;
 
+import '../models/barcode_result_print.dart';
 import '../models/client_authentication.dart';
 import '../models/exam_search.dart';
 import '../models/pre_attendance.dart';
@@ -207,6 +208,39 @@ Future<List<ExamSearchResult>> fetchExamSearch(
       .whereType<Map<String, dynamic>>()
       .map(ExamSearchResult.fromJson)
       .toList();
+}
+
+Future<BarcodeResultPrint> printBarcodeResult(
+  String barcode, {
+  String? printer,
+}) async {
+  final body = <String, Object?>{
+    'barcode': barcode,
+  };
+
+  if (printer != null && printer.trim().isNotEmpty) {
+    body['printer'] = printer.trim();
+  }
+
+  final response = await http.post(
+    Uri.parse('$bffBaseUrl/barcode-result/print'),
+    headers: {'Accept': 'application/json', 'Content-Type': 'application/json'},
+    body: jsonEncode(body),
+  );
+
+  if (response.statusCode < 200 || response.statusCode >= 300) {
+    throw Exception(
+      'BFF retornou HTTP ${response.statusCode}: ${_truncate(response.body)}',
+    );
+  }
+
+  final payload = jsonDecode(response.body);
+
+  if (payload is! Map<String, dynamic>) {
+    throw Exception('Resposta do BFF nao e um objeto JSON.');
+  }
+
+  return BarcodeResultPrint.fromJson(payload);
 }
 
 String _truncate(String value) {

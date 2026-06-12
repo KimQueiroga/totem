@@ -10,6 +10,7 @@ import '../widgets/loading_content.dart';
 import '../widgets/page_scaffold.dart';
 import '../widgets/terminal_error_content.dart';
 import '../widgets/terminal_not_found_content.dart';
+import 'barcode_identification_content.dart';
 import 'client_code_identification_content.dart';
 import 'cpf_identification_content.dart';
 import 'client_confirmation_content.dart';
@@ -54,6 +55,9 @@ class _HomePageState extends State<HomePage> {
   bool _isAuthenticatingClient = false;
   String? _clientAuthenticationErrorMessage;
   int _clientAuthenticationFailureCount = 0;
+  bool _isProcessingBarcode = false;
+  String? _barcodeResultMessage;
+  bool? _barcodeResultSuccess;
   TerminalService? _selectedService;
   IdentificationOption? _selectedIdentificationOption;
 
@@ -95,6 +99,9 @@ class _HomePageState extends State<HomePage> {
       _clientCode = null;
       _isAuthenticatingClient = false;
       _clientAuthenticationErrorMessage = null;
+      _isProcessingBarcode = false;
+      _barcodeResultMessage = null;
+      _barcodeResultSuccess = null;
       _selectedService = null;
       _selectedIdentificationOption = null;
     });
@@ -110,6 +117,9 @@ class _HomePageState extends State<HomePage> {
       _clientCode = null;
       _isAuthenticatingClient = false;
       _clientAuthenticationErrorMessage = null;
+      _isProcessingBarcode = false;
+      _barcodeResultMessage = null;
+      _barcodeResultSuccess = null;
       _selectedIdentificationOption = null;
     });
   }
@@ -122,6 +132,9 @@ class _HomePageState extends State<HomePage> {
       _clientCode = null;
       _isAuthenticatingClient = false;
       _clientAuthenticationErrorMessage = null;
+      _isProcessingBarcode = false;
+      _barcodeResultMessage = null;
+      _barcodeResultSuccess = null;
     });
   }
 
@@ -134,6 +147,9 @@ class _HomePageState extends State<HomePage> {
       _clientCode = null;
       _isAuthenticatingClient = false;
       _clientAuthenticationErrorMessage = null;
+      _isProcessingBarcode = false;
+      _barcodeResultMessage = null;
+      _barcodeResultSuccess = null;
     });
   }
 
@@ -152,19 +168,8 @@ class _HomePageState extends State<HomePage> {
   }
 
   void _handleIdentificationOptionSelected(IdentificationOption option) {
-    if (option == IdentificationOption.barcode) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text(
-            'Leitura por codigo de barras ainda depende da rota legada.',
-          ),
-        ),
-      );
-
-      return;
-    }
-
-    if (option == IdentificationOption.cpf ||
+    if (option == IdentificationOption.barcode ||
+        option == IdentificationOption.cpf ||
         option == IdentificationOption.clientCode) {
       setState(() {
         _selectedIdentificationOption = option;
@@ -214,6 +219,46 @@ class _HomePageState extends State<HomePage> {
         _clientAuthenticationErrorMessage =
             'Nao foi possivel validar seus dados. Confira as informacoes e tente novamente.';
         _clientAuthenticationFailureCount++;
+      });
+    }
+  }
+
+  Future<void> _handleBarcodeSubmit(
+    BarcodeIdentificationData data,
+    String? printer,
+  ) async {
+    setState(() {
+      _isProcessingBarcode = true;
+      _barcodeResultMessage = null;
+      _barcodeResultSuccess = null;
+    });
+
+    try {
+      final result = await printBarcodeResult(data.barcode, printer: printer);
+
+      if (!mounted) {
+        return;
+      }
+
+      setState(() {
+        _isProcessingBarcode = false;
+        _barcodeResultSuccess = result.printed;
+        _barcodeResultMessage = result.message.isEmpty
+            ? result.printed
+                  ? 'Resultado enviado para impressao.'
+                  : 'Nao foi possivel imprimir o resultado.'
+            : result.message;
+      });
+    } catch (_) {
+      if (!mounted) {
+        return;
+      }
+
+      setState(() {
+        _isProcessingBarcode = false;
+        _barcodeResultSuccess = false;
+        _barcodeResultMessage =
+            'Nao foi possivel imprimir pelo codigo de barras. Confira a etiqueta ou procure um atendente.';
       });
     }
   }
@@ -433,6 +478,28 @@ class _HomePageState extends State<HomePage> {
 
               final selectedService = _selectedService;
               if (selectedService != null && selectedService.isPreAttendance) {
+                if (_selectedIdentificationOption ==
+                    IdentificationOption.barcode) {
+                  return PageScaffold(
+                    alignment: Alignment.topCenter,
+                    identity: identity,
+                    maxWidth: 980,
+                    child: BarcodeIdentificationContent(
+                      identity: identity,
+                      flowTitle: 'Checkin Pre Atendimento',
+                      onHome: _backToHome,
+                      onBack: _backToIdentificationOptions,
+                      onSubmit: (data) => _handleBarcodeSubmit(
+                        data,
+                        contextSnapshot.data!.printer,
+                      ),
+                      isSubmitting: _isProcessingBarcode,
+                      message: _barcodeResultMessage,
+                      isSuccess: _barcodeResultSuccess,
+                    ),
+                  );
+                }
+
                 if (_selectedIdentificationOption ==
                     IdentificationOption.clientCode) {
                   final clientAuthentication = _clientAuthentication;
