@@ -90,14 +90,22 @@ Future<ClientAuthentication> authenticateClientWithCpf(
   ClientCredentials credentials,
 ) async {
   final uri = Uri.parse('$bffBaseUrl/client-token');
+  final body = <String, Object?>{
+    'password': credentials.password,
+  };
+  final clientCode = credentials.clientCode?.trim();
+
+  if (clientCode != null && clientCode.isNotEmpty) {
+    body['clientCode'] = clientCode;
+  } else {
+    body['cpf'] = credentials.cpf;
+    body['birthDate'] = _toApiBirthDate(credentials.birthDate);
+  }
+
   final response = await http.post(
     uri,
     headers: {'Accept': 'application/json', 'Content-Type': 'application/json'},
-    body: jsonEncode({
-      'cpf': credentials.cpf,
-      'password': credentials.password,
-      'birthDate': _toApiBirthDate(credentials.birthDate),
-    }),
+    body: jsonEncode(body),
   );
 
   if (response.statusCode < 200 || response.statusCode >= 300) {

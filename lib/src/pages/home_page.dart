@@ -232,14 +232,49 @@ class _HomePageState extends State<HomePage> {
     });
   }
 
-  void _handleClientCodeSubmit(ClientCodeIdentificationData data) {
+  Future<void> _handleClientCodeSubmit(ClientCodeIdentificationData data) async {
     final clientCode = data.clientCode.trim();
 
     if (clientCode.isEmpty) {
       return;
     }
 
-    _loadPreAttendance(clientCode, clientToken: '');
+    setState(() {
+      _isAuthenticatingClient = true;
+      _clientAuthenticationErrorMessage = null;
+    });
+
+    try {
+      final authentication = await widget.authenticateClient(
+        ClientCredentials(
+          clientCode: clientCode,
+          password: data.password,
+        ),
+      );
+
+      if (!mounted) {
+        return;
+      }
+
+      setState(() {
+        _clientAuthentication = authentication;
+        _clientCode = authentication.user.clientId ?? clientCode;
+        _isAuthenticatingClient = false;
+      });
+    } catch (_) {
+      if (!mounted) {
+        return;
+      }
+
+      setState(() {
+        _clientAuthentication = null;
+        _clientCode = null;
+        _isAuthenticatingClient = false;
+        _clientAuthenticationErrorMessage =
+            'Nao foi possivel validar seus dados. Confira o codigo e a senha e tente novamente.';
+        _clientAuthenticationFailureCount++;
+      });
+    }
   }
 
   Future<void> _handlePreAttendanceNext() async {
@@ -400,10 +435,10 @@ class _HomePageState extends State<HomePage> {
               if (selectedService != null && selectedService.isPreAttendance) {
                 if (_selectedIdentificationOption ==
                     IdentificationOption.clientCode) {
-                  final clientCode = _clientCode;
+                  final clientAuthentication = _clientAuthentication;
                   final preAttendance = _preAttendance;
 
-                  if (clientCode != null && preAttendance != null) {
+                  if (clientAuthentication != null && preAttendance != null) {
                     return FutureBuilder<PreAttendanceQuery>(
                       future: preAttendance,
                       builder: (context, preAttendanceSnapshot) {
@@ -444,7 +479,8 @@ class _HomePageState extends State<HomePage> {
                             child: PreAttendanceExamsContent(
                               identity: identity,
                               flowTitle: 'Checkin Pre Atendimento',
-                              clientCode: clientCode,
+                              authentication: clientAuthentication,
+                              clientCode: clientAuthentication.user.clientId,
                               guide: _selectedGuide!,
                               examSearchFuture: _selectedGuideExamSearch!,
                               onBack: _handlePreAttendanceBackToSelection,
@@ -461,7 +497,8 @@ class _HomePageState extends State<HomePage> {
                           child: PreAttendanceGuidesContent(
                             identity: identity,
                             flowTitle: 'Checkin Pre Atendimento',
-                            clientCode: clientCode,
+                            authentication: clientAuthentication,
+                            clientCode: clientAuthentication.user.clientId,
                             preAttendance: preAttendanceSnapshot.data!,
                             selectedGuide: _selectedGuide,
                             onSelectGuide: _handleSelectPreAttendanceGuide,
@@ -480,6 +517,24 @@ class _HomePageState extends State<HomePage> {
                     );
                   }
 
+                  if (clientAuthentication != null) {
+                    return PageScaffold(
+                      alignment: Alignment.topCenter,
+                      identity: identity,
+                      maxWidth: 980,
+                      scrollable: false,
+                      child: ClientConfirmationContent(
+                        identity: identity,
+                        flowTitle: 'Checkin Pre Atendimento',
+                        authentication: clientAuthentication,
+                        onBack: _backToCpfIdentification,
+                        onHome: _backToHome,
+                        onReject: _backToCpfIdentification,
+                        onConfirm: _handleClientConfirmation,
+                      ),
+                    );
+                  }
+
                   return PageScaffold(
                     alignment: Alignment.topCenter,
                     identity: identity,
@@ -490,6 +545,9 @@ class _HomePageState extends State<HomePage> {
                       onHome: _backToHome,
                       onBack: _backToIdentificationOptions,
                       onSubmit: _handleClientCodeSubmit,
+                      isSubmitting: _isAuthenticatingClient,
+                      errorMessage: _clientAuthenticationErrorMessage,
+                      failureCount: _clientAuthenticationFailureCount,
                     ),
                   );
                 }

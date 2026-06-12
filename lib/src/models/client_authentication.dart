@@ -249,14 +249,16 @@ class ClientProfileUpdate {
 
 class ClientCredentials {
   const ClientCredentials({
-    required this.cpf,
     required this.password,
-    required this.birthDate,
+    this.cpf = '',
+    this.birthDate = '',
+    this.clientCode,
   });
 
   final String cpf;
   final String password;
   final String birthDate;
+  final String? clientCode;
 }
 
 String _extractClientToken(Map<String, dynamic> json) {
