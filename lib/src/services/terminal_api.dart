@@ -240,6 +240,11 @@ Future<BarcodeResultPrint> printBarcodeResult(
     throw Exception('Resposta do BFF nao e um objeto JSON.');
   }
 
+  final pdfUrl = payload['pdfUrl'];
+  if (pdfUrl is String && pdfUrl.startsWith('/')) {
+    payload['pdfUrl'] = _makeBffAbsoluteUrl(pdfUrl);
+  }
+
   return BarcodeResultPrint.fromJson(payload);
 }
 
@@ -258,4 +263,12 @@ String _toApiBirthDate(String value) {
   }
 
   return '${match.group(3)}-${match.group(2)}-${match.group(1)}';
+}
+
+String _makeBffAbsoluteUrl(String path) {
+  final baseUri = Uri.parse(bffBaseUrl);
+
+  return baseUri
+      .replace(path: path, queryParameters: null, fragment: null)
+      .toString();
 }

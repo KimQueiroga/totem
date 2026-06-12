@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../models/barcode_result_print.dart';
 import '../models/client_authentication.dart';
 import '../models/exam_search.dart';
 import '../models/pre_attendance.dart';
@@ -243,11 +244,7 @@ class _HomePageState extends State<HomePage> {
       setState(() {
         _isProcessingBarcode = false;
         _barcodeResultSuccess = result.printed;
-        _barcodeResultMessage = result.message.isEmpty
-            ? result.printed
-                  ? 'Resultado enviado para impressao.'
-                  : 'Nao foi possivel imprimir o resultado.'
-            : result.message;
+        _barcodeResultMessage = _formatBarcodeResultMessage(result);
       });
     } catch (_) {
       if (!mounted) {
@@ -261,6 +258,26 @@ class _HomePageState extends State<HomePage> {
             'Nao foi possivel imprimir pelo codigo de barras. Confira a etiqueta ou procure um atendente.';
       });
     }
+  }
+
+  String _formatBarcodeResultMessage(BarcodeResultPrint result) {
+    if (result.pdfGenerated && result.pdfUrl != null) {
+      return '${result.message} PDF: ${result.pdfUrl}';
+    }
+
+    final printer = result.printer?.trim();
+
+    if (result.printed && printer != null && printer.isNotEmpty) {
+      return 'Resultado enviado para impressora $printer.';
+    }
+
+    if (result.message.isNotEmpty) {
+      return result.message;
+    }
+
+    return result.printed
+        ? 'Resultado enviado para impressao.'
+        : 'Nao foi possivel imprimir o resultado.';
   }
 
   void _handleForgotPassword() {

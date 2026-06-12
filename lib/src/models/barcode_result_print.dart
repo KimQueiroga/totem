@@ -4,6 +4,9 @@ class BarcodeResultPrint {
     required this.printed,
     required this.released,
     required this.message,
+    this.pdfGenerated = false,
+    this.pdfUrl,
+    this.printer,
     this.orderStatus,
     this.clientCode,
     this.status,
@@ -15,6 +18,9 @@ class BarcodeResultPrint {
       printed: json['printed'] == true,
       released: json['released'] == true,
       message: json['message']?.toString() ?? '',
+      pdfGenerated: json['pdfGenerated'] == true,
+      pdfUrl: json['pdfUrl']?.toString(),
+      printer: json['printer']?.toString(),
       orderStatus: _intValue(json['orderStatus']),
       clientCode: json['clientCode']?.toString(),
       status: json['status']?.toString(),
@@ -25,6 +31,9 @@ class BarcodeResultPrint {
   final bool printed;
   final bool released;
   final String message;
+  final bool pdfGenerated;
+  final String? pdfUrl;
+  final String? printer;
   final int? orderStatus;
   final String? clientCode;
   final String? status;
