@@ -10,6 +10,7 @@ import '../widgets/loading_content.dart';
 import '../widgets/page_scaffold.dart';
 import '../widgets/terminal_error_content.dart';
 import '../widgets/terminal_not_found_content.dart';
+import 'client_code_identification_content.dart';
 import 'cpf_identification_content.dart';
 import 'client_confirmation_content.dart';
 import 'identification_options_content.dart';
@@ -49,6 +50,7 @@ class _HomePageState extends State<HomePage> {
   Future<PreAttendanceQuery>? _preAttendance;
   PreAttendanceGuide? _selectedGuide;
   Future<List<ProcedureExamSearch>>? _selectedGuideExamSearch;
+  String? _clientCode;
   bool _isAuthenticatingClient = false;
   String? _clientAuthenticationErrorMessage;
   int _clientAuthenticationFailureCount = 0;
@@ -90,6 +92,7 @@ class _HomePageState extends State<HomePage> {
       _terminalContext = null;
       _clientAuthentication = null;
       _preAttendance = null;
+      _clientCode = null;
       _isAuthenticatingClient = false;
       _clientAuthenticationErrorMessage = null;
       _selectedService = null;
@@ -104,6 +107,7 @@ class _HomePageState extends State<HomePage> {
       _preAttendance = null;
       _selectedGuide = null;
       _selectedGuideExamSearch = null;
+      _clientCode = null;
       _isAuthenticatingClient = false;
       _clientAuthenticationErrorMessage = null;
       _selectedIdentificationOption = null;
@@ -115,6 +119,7 @@ class _HomePageState extends State<HomePage> {
       _selectedIdentificationOption = null;
       _clientAuthentication = null;
       _preAttendance = null;
+      _clientCode = null;
       _isAuthenticatingClient = false;
       _clientAuthenticationErrorMessage = null;
     });
@@ -126,6 +131,7 @@ class _HomePageState extends State<HomePage> {
       _preAttendance = null;
       _selectedGuide = null;
       _selectedGuideExamSearch = null;
+      _clientCode = null;
       _isAuthenticatingClient = false;
       _clientAuthenticationErrorMessage = null;
     });
@@ -146,7 +152,20 @@ class _HomePageState extends State<HomePage> {
   }
 
   void _handleIdentificationOptionSelected(IdentificationOption option) {
-    if (option == IdentificationOption.cpf) {
+    if (option == IdentificationOption.barcode) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Leitura por codigo de barras ainda depende da rota legada.',
+          ),
+        ),
+      );
+
+      return;
+    }
+
+    if (option == IdentificationOption.cpf ||
+        option == IdentificationOption.clientCode) {
       setState(() {
         _selectedIdentificationOption = option;
       });
@@ -211,6 +230,16 @@ class _HomePageState extends State<HomePage> {
     setState(() {
       _selectedGuide = guide;
     });
+  }
+
+  void _handleClientCodeSubmit(ClientCodeIdentificationData data) {
+    final clientCode = data.clientCode.trim();
+
+    if (clientCode.isEmpty) {
+      return;
+    }
+
+    _loadPreAttendance(clientCode, clientToken: '');
   }
 
   Future<void> _handlePreAttendanceNext() async {
@@ -296,7 +325,7 @@ class _HomePageState extends State<HomePage> {
     }
   }
 
-  void _loadPreAttendance(String clientId) {
+  void _loadPreAttendance(String clientId, {String? clientToken}) {
     if (clientId.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
@@ -309,8 +338,9 @@ class _HomePageState extends State<HomePage> {
     setState(() {
       _preAttendance = widget.loadPreAttendance(
         clientId,
-        _clientAuthentication?.token,
+        clientToken ?? _clientAuthentication?.token,
       );
+      _clientCode = clientId;
       _selectedGuide = null;
       _selectedGuideExamSearch = null;
     });
@@ -368,6 +398,102 @@ class _HomePageState extends State<HomePage> {
 
               final selectedService = _selectedService;
               if (selectedService != null && selectedService.isPreAttendance) {
+                if (_selectedIdentificationOption ==
+                    IdentificationOption.clientCode) {
+                  final clientCode = _clientCode;
+                  final preAttendance = _preAttendance;
+
+                  if (clientCode != null && preAttendance != null) {
+                    return FutureBuilder<PreAttendanceQuery>(
+                      future: preAttendance,
+                      builder: (context, preAttendanceSnapshot) {
+                        if (preAttendanceSnapshot.connectionState !=
+                            ConnectionState.done) {
+                          return PageScaffold(
+                            identity: identity,
+                            child: const LoadingContent(
+                              message: 'Carregando guias pre atendimento...',
+                            ),
+                          );
+                        }
+
+                        if (preAttendanceSnapshot.hasError ||
+                            !preAttendanceSnapshot.hasData) {
+                          return PageScaffold(
+                            alignment: Alignment.topCenter,
+                            identity: identity,
+                            maxWidth: 980,
+                            child: TerminalErrorContent(
+                              terminalName: terminalName,
+                              error: preAttendanceSnapshot.error,
+                              title:
+                                  'Nao foi possivel carregar as guias de pre atendimento.',
+                              subtitle:
+                                  'Tente novamente ou procure um atendente.',
+                            ),
+                          );
+                        }
+
+                        if (_selectedGuideExamSearch != null &&
+                            _selectedGuide != null) {
+                          return PageScaffold(
+                            alignment: Alignment.topCenter,
+                            identity: identity,
+                            maxWidth: 980,
+                            scrollable: false,
+                            child: PreAttendanceExamsContent(
+                              identity: identity,
+                              flowTitle: 'Checkin Pre Atendimento',
+                              clientCode: clientCode,
+                              guide: _selectedGuide!,
+                              examSearchFuture: _selectedGuideExamSearch!,
+                              onBack: _handlePreAttendanceBackToSelection,
+                              onHome: _backToHome,
+                            ),
+                          );
+                        }
+
+                        return PageScaffold(
+                          alignment: Alignment.topCenter,
+                          identity: identity,
+                          maxWidth: 980,
+                          scrollable: false,
+                          child: PreAttendanceGuidesContent(
+                            identity: identity,
+                            flowTitle: 'Checkin Pre Atendimento',
+                            clientCode: clientCode,
+                            preAttendance: preAttendanceSnapshot.data!,
+                            selectedGuide: _selectedGuide,
+                            onSelectGuide: _handleSelectPreAttendanceGuide,
+                            onBack: () {
+                              setState(() {
+                                _preAttendance = null;
+                                _selectedGuide = null;
+                              });
+                            },
+                            onHome: _backToHome,
+                            onCancel: _backToCpfIdentification,
+                            onNext: _handlePreAttendanceNext,
+                          ),
+                        );
+                      },
+                    );
+                  }
+
+                  return PageScaffold(
+                    alignment: Alignment.topCenter,
+                    identity: identity,
+                    maxWidth: 980,
+                    child: ClientCodeIdentificationContent(
+                      identity: identity,
+                      flowTitle: 'Checkin Pre Atendimento',
+                      onHome: _backToHome,
+                      onBack: _backToIdentificationOptions,
+                      onSubmit: _handleClientCodeSubmit,
+                    ),
+                  );
+                }
+
                 if (_selectedIdentificationOption == IdentificationOption.cpf) {
                   final clientAuthentication = _clientAuthentication;
                   final preAttendance = _preAttendance;
@@ -414,6 +540,7 @@ class _HomePageState extends State<HomePage> {
                               identity: identity,
                               flowTitle: 'Checkin Pre Atendimento',
                               authentication: clientAuthentication,
+                              clientCode: clientAuthentication.user.clientId,
                               guide: _selectedGuide!,
                               examSearchFuture: _selectedGuideExamSearch!,
                               onBack: _handlePreAttendanceBackToSelection,
@@ -431,6 +558,7 @@ class _HomePageState extends State<HomePage> {
                             identity: identity,
                             flowTitle: 'Checkin Pre Atendimento',
                             authentication: clientAuthentication,
+                            clientCode: clientAuthentication.user.clientId,
                             preAttendance: preAttendanceSnapshot.data!,
                             selectedGuide: _selectedGuide,
                             onSelectGuide: _handleSelectPreAttendanceGuide,

@@ -11,16 +11,18 @@ class PreAttendanceExamsContent extends StatelessWidget {
     super.key,
     required this.identity,
     required this.flowTitle,
-    required this.authentication,
     required this.guide,
     required this.examSearchFuture,
     required this.onBack,
     required this.onHome,
+    this.authentication,
+    this.clientCode,
   });
 
   final TerminalVisualIdentity identity;
   final String flowTitle;
-  final ClientAuthentication authentication;
+  final ClientAuthentication? authentication;
+  final String? clientCode;
   final PreAttendanceGuide guide;
   final Future<List<ProcedureExamSearch>> examSearchFuture;
   final VoidCallback onBack;
@@ -52,6 +54,7 @@ class PreAttendanceExamsContent extends StatelessWidget {
               const SizedBox(height: 12),
               _PatientSummary(
                 authentication: authentication,
+                clientCode: clientCode,
                 primaryColor: primaryColor,
               ),
               const SizedBox(height: 14),
@@ -144,15 +147,17 @@ class PreAttendanceExamsContent extends StatelessWidget {
 class _PatientSummary extends StatelessWidget {
   const _PatientSummary({
     required this.authentication,
+    required this.clientCode,
     required this.primaryColor,
   });
 
-  final ClientAuthentication authentication;
+  final ClientAuthentication? authentication;
+  final String? clientCode;
   final Color primaryColor;
 
   @override
   Widget build(BuildContext context) {
-    final user = authentication.user;
+    final user = authentication?.user;
 
     return Align(
       alignment: Alignment.centerLeft,
@@ -163,12 +168,12 @@ class _PatientSummary extends StatelessWidget {
           children: [
             _SummaryLine(
               label: 'Paciente',
-              value: user.displayName,
+              value: user?.displayName ?? '-',
               primaryColor: primaryColor,
             ),
             _SummaryLine(
               label: 'Codigo do cliente',
-              value: user.clientId ?? '-',
+              value: user?.clientId ?? clientCode ?? '-',
               primaryColor: primaryColor,
             ),
           ],

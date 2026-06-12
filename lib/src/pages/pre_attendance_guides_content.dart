@@ -11,7 +11,6 @@ class PreAttendanceGuidesContent extends StatelessWidget {
     super.key,
     required this.identity,
     required this.flowTitle,
-    required this.authentication,
     required this.preAttendance,
     required this.selectedGuide,
     required this.onSelectGuide,
@@ -19,11 +18,14 @@ class PreAttendanceGuidesContent extends StatelessWidget {
     required this.onHome,
     required this.onCancel,
     required this.onNext,
+    this.authentication,
+    this.clientCode,
   });
 
   final TerminalVisualIdentity identity;
   final String flowTitle;
-  final ClientAuthentication authentication;
+  final ClientAuthentication? authentication;
+  final String? clientCode;
   final PreAttendanceQuery preAttendance;
   final PreAttendanceGuide? selectedGuide;
   final void Function(PreAttendanceGuide guide) onSelectGuide;
@@ -60,6 +62,7 @@ class PreAttendanceGuidesContent extends StatelessWidget {
               const SizedBox(height: 12),
               _PatientSummary(
                 authentication: authentication,
+                clientCode: clientCode,
                 primaryColor: primaryColor,
               ),
               const SizedBox(height: 14),
@@ -126,15 +129,17 @@ class PreAttendanceGuidesContent extends StatelessWidget {
 class _PatientSummary extends StatelessWidget {
   const _PatientSummary({
     required this.authentication,
+    required this.clientCode,
     required this.primaryColor,
   });
 
-  final ClientAuthentication authentication;
+  final ClientAuthentication? authentication;
+  final String? clientCode;
   final Color primaryColor;
 
   @override
   Widget build(BuildContext context) {
-    final user = authentication.user;
+    final user = authentication?.user;
 
     return Align(
       alignment: Alignment.centerLeft,
@@ -145,12 +150,12 @@ class _PatientSummary extends StatelessWidget {
           children: [
             _SummaryLine(
               label: 'Paciente',
-              value: user.displayName,
+              value: user?.displayName ?? '-',
               primaryColor: primaryColor,
             ),
             _SummaryLine(
               label: 'Codigo do cliente',
-              value: user.clientId ?? '-',
+              value: user?.clientId ?? clientCode ?? '-',
               primaryColor: primaryColor,
             ),
           ],

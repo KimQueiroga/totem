@@ -9,6 +9,8 @@
 .history
 .svn/
 migrate_working_dir/
+.old_totem_extract_review/
+*.zip
 
 # IntelliJ related
 *.iml
