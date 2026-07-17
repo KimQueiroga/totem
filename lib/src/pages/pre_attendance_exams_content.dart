@@ -617,6 +617,7 @@ class _QuestionnaireExamCandidate {
           exam.materialDescription,
           item.fallbackMaterialDescription,
         ]),
+        procedure: item.keyword,
       );
 
       if (candidate != null) {
@@ -629,6 +630,7 @@ class _QuestionnaireExamCandidate {
       material: item.fallbackMaterialCode,
       description: item.fallbackDescription,
       materialDescription: item.fallbackMaterialDescription,
+      procedure: item.keyword,
     );
 
     if (fallbackCandidate != null) {
@@ -643,9 +645,15 @@ class _QuestionnaireExamCandidate {
     required String material,
     required String description,
     required String materialDescription,
+    required String procedure,
   }) {
     final examForQuestionnaire = _firstUseful([exam]);
     final materialForQuestionnaire = _firstUseful([material]);
+
+    if (!_isValidExamMnemonic(examForQuestionnaire, procedure)) {
+      return null;
+    }
+
     final examForCheck = _examQuestionnaireId(
       material: materialForQuestionnaire,
       exam: examForQuestionnaire,
@@ -687,6 +695,19 @@ String _examQuestionnaireId({
   }
 
   return '$material||$exam';
+}
+
+bool _isValidExamMnemonic(String value, String procedure) {
+  final normalizedValue = value.trim().toUpperCase();
+  final normalizedProcedure = procedure.trim().toUpperCase();
+
+  if (normalizedValue.isEmpty ||
+      normalizedValue == '-' ||
+      normalizedValue == normalizedProcedure) {
+    return false;
+  }
+
+  return !RegExp(r'^\d+$').hasMatch(normalizedValue);
 }
 
 class _ExamSelection {
@@ -731,16 +752,18 @@ class _ExamResultTable extends StatelessWidget {
           rows: List.generate(results.length, (index) {
             final item = results[index];
             final selection = selections[index];
-            final exam = item.firstResult;
+            final exam = _bestDisplayExam(item);
             final description = _firstNotEmpty([
               exam?.description,
               item.fallbackDescription,
             ]);
             final examCode = _firstNotEmpty([
-              exam?.mnemonic,
-              item.fallbackExamMnemonic,
-              item.keyword,
-              exam?.id,
+              _isValidExamMnemonic(exam?.mnemonic ?? '', item.keyword)
+                  ? exam?.mnemonic
+                  : null,
+              _isValidExamMnemonic(item.fallbackExamMnemonic, item.keyword)
+                  ? item.fallbackExamMnemonic
+                  : null,
             ]);
             final materialCode = _firstNotEmpty([
               exam?.materialMnemonic,
@@ -800,6 +823,16 @@ class _ExamResultTable extends StatelessWidget {
       ),
     );
   }
+}
+
+ExamSearchResult? _bestDisplayExam(ProcedureExamSearch item) {
+  for (final exam in item.results) {
+    if (_isValidExamMnemonic(exam.mnemonic, item.keyword)) {
+      return exam;
+    }
+  }
+
+  return null;
 }
 
 String _buildExamLabel({
