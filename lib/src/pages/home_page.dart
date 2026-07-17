@@ -375,6 +375,7 @@ class _HomePageState extends State<HomePage> {
           return ProcedureExamSearch(
             keyword: keyword,
             results: results,
+            fallbackExamMnemonic: exam.mnemonic,
             fallbackDescription: exam.description,
             fallbackMaterialCode: exam.materialCode,
             fallbackMaterialDescription: exam.materialDescription,
@@ -384,6 +385,7 @@ class _HomePageState extends State<HomePage> {
           return ProcedureExamSearch(
             keyword: keyword,
             results: const [],
+            fallbackExamMnemonic: exam.mnemonic,
             fallbackDescription: exam.description,
             fallbackMaterialCode: exam.materialCode,
             fallbackMaterialDescription: exam.materialDescription,

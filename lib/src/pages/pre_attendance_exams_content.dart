@@ -580,20 +580,18 @@ class _QuestionnaireExamCandidate {
 
   factory _QuestionnaireExamCandidate.fromSearch(ProcedureExamSearch item) {
     final exam = item.firstResult;
-    final examForCheck = _firstUseful([
-      exam?.id,
-      exam?.mnemonic,
-      item.keyword,
-    ]);
     final examForQuestionnaire = _firstUseful([
       exam?.mnemonic,
-      item.keyword,
-      exam?.id,
+      item.fallbackExamMnemonic,
     ]);
     final material = _firstUseful([
       exam?.materialMnemonic,
       item.fallbackMaterialCode,
     ]);
+    final examForCheck = _examQuestionnaireId(
+      material: material,
+      exam: examForQuestionnaire,
+    );
     final description = _firstUseful([
       exam?.description,
       item.fallbackDescription,
@@ -620,6 +618,17 @@ class _QuestionnaireExamCandidate {
   final String examForQuestionnaire;
   final String material;
   final String label;
+}
+
+String _examQuestionnaireId({
+  required String material,
+  required String exam,
+}) {
+  if (material.isEmpty || exam.isEmpty) {
+    return '';
+  }
+
+  return '$material||$exam';
 }
 
 class _ExamSelection {
@@ -671,8 +680,9 @@ class _ExamResultTable extends StatelessWidget {
             ]);
             final examCode = _firstNotEmpty([
               exam?.mnemonic,
-              exam?.id,
+              item.fallbackExamMnemonic,
               item.keyword,
+              exam?.id,
             ]);
             final materialCode = _firstNotEmpty([
               exam?.materialMnemonic,

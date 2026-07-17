@@ -304,8 +304,11 @@ void main() {
                   exams: [
                     PreAttendanceExam(
                       code: '40304361',
+                      mnemonic: 'HG',
                       description: 'HEMOGRAMA',
+                      materialCode: 'S',
                       materialDescription: 'SANGUE',
+                      sampleCondition: '',
                     ),
                   ],
                 ),

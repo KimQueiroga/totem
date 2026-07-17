@@ -15,10 +15,22 @@ class ExamSearchResult {
 
     return ExamSearchResult(
       id: json['id']?.toString() ?? '',
-      mnemonic: json['mnemonic']?.toString() ?? '',
+      mnemonic: _extractFirstString(json, const [
+        'mnemonic',
+        'mnemonico',
+        'mnemonicCode',
+        'sigla',
+      ]),
       description: json['description']?.toString() ?? '',
       materialMnemonic: material is Map<String, dynamic>
-          ? material['mnemonic']?.toString() ?? ''
+          ? _extractFirstString(material, const [
+              'mnemonic',
+              'mnemonico',
+              'mnemonicCode',
+              'sigla',
+              'code',
+              'codigo',
+            ])
           : '',
       materialDescription: material is Map<String, dynamic>
           ? material['description']?.toString() ?? ''
@@ -49,6 +61,7 @@ class ProcedureExamSearch {
   const ProcedureExamSearch({
     required this.keyword,
     required this.results,
+    this.fallbackExamMnemonic = '',
     this.fallbackDescription = '',
     this.fallbackMaterialCode = '',
     this.fallbackMaterialDescription = '',
@@ -58,6 +71,7 @@ class ProcedureExamSearch {
 
   final String keyword;
   final List<ExamSearchResult> results;
+  final String fallbackExamMnemonic;
   final String fallbackDescription;
   final String fallbackMaterialCode;
   final String fallbackMaterialDescription;
@@ -67,4 +81,20 @@ class ProcedureExamSearch {
   bool get hasResults => results.isNotEmpty;
   ExamSearchResult? get firstResult =>
       results.isNotEmpty ? results.first : null;
+}
+
+String _extractFirstString(Map<String, dynamic> json, List<String> keys) {
+  for (final key in keys) {
+    final value = json[key];
+
+    if (value is String && value.trim().isNotEmpty) {
+      return value.trim();
+    }
+
+    if (value is num) {
+      return value.toString();
+    }
+  }
+
+  return '';
 }

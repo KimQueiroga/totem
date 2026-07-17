@@ -220,6 +220,7 @@ String _extractHealthPlan(Map<String, dynamic> json) {
 class PreAttendanceExam {
   const PreAttendanceExam({
     required this.code,
+    required this.mnemonic,
     required this.description,
     required this.materialCode,
     required this.materialDescription,
@@ -229,6 +230,14 @@ class PreAttendanceExam {
   factory PreAttendanceExam.fromJson(Map<String, dynamic> json) {
     return PreAttendanceExam(
       code: json['codigoExame']?.toString() ?? '',
+      mnemonic: _extractFirstString(json, const [
+        'siglaExame',
+        'mnemonicoExame',
+        'mnemonicExame',
+        'mnemonic',
+        'mnemonico',
+        'sigla',
+      ]),
       description: json['descricaoExame']?.toString() ?? '',
       materialCode: _extractFirstString(json, const [
         'codigoMaterial',
@@ -247,6 +256,7 @@ class PreAttendanceExam {
   }
 
   final String code;
+  final String mnemonic;
   final String description;
   final String materialCode;
   final String materialDescription;
