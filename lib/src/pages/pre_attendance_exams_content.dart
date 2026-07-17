@@ -276,14 +276,20 @@ class _ExamResultTable extends StatelessWidget {
           ],
           rows: results.map((item) {
             final exam = item.firstResult;
-            final status = item.error != null
-                ? 'Erro'
-                : exam != null
+            final description = _firstNotEmpty([
+              exam?.description,
+              item.fallbackDescription,
+            ]);
+            final materialDescription = _firstNotEmpty([
+              exam?.materialDescription,
+              item.fallbackMaterialDescription,
+            ]);
+            final status = exam != null
                 ? 'Encontrado'
+                : item.error != null
+                ? 'Detalhes indisponiveis'
                 : 'Nao encontrado';
-            final condition = item.error != null
-                ? item.error!
-                : exam?.sampleConditionIsRequired == true
+            final condition = exam?.sampleConditionIsRequired == true
                 ? 'Sim'
                 : 'Nao';
 
@@ -297,8 +303,8 @@ class _ExamResultTable extends StatelessWidget {
                         : exam?.id ?? '-',
                   ),
                 ),
-                DataCell(Text(exam?.materialDescription ?? '-')),
-                DataCell(Text(exam?.description ?? '-')),
+                DataCell(Text(materialDescription)),
+                DataCell(Text(description)),
                 DataCell(Text(condition)),
                 DataCell(Text(status)),
               ],
@@ -308,4 +314,16 @@ class _ExamResultTable extends StatelessWidget {
       ),
     );
   }
+}
+
+String _firstNotEmpty(List<String?> values) {
+  for (final value in values) {
+    final trimmed = value?.trim();
+
+    if (trimmed != null && trimmed.isNotEmpty) {
+      return trimmed;
+    }
+  }
+
+  return '-';
 }

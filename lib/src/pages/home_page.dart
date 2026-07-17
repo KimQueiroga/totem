@@ -357,13 +357,14 @@ class _HomePageState extends State<HomePage> {
   Future<List<ProcedureExamSearch>> _searchExamsForGuide(
     PreAttendanceGuide guide,
   ) async {
-    final keywords = guide.exams
-        .map((exam) => exam.code.trim())
-        .where((keyword) => keyword.isNotEmpty)
+    final exams = guide.exams
+        .where((exam) => exam.code.trim().isNotEmpty)
         .toList();
 
     return Future.wait(
-      keywords.map((keyword) async {
+      exams.map((exam) async {
+        final keyword = exam.code.trim();
+
         try {
           final results = await fetchExamSearch(
             keyword,
@@ -371,12 +372,19 @@ class _HomePageState extends State<HomePage> {
             healthPlan: guide.healthPlan.isNotEmpty ? guide.healthPlan : null,
             unit: '1',
           );
-          return ProcedureExamSearch(keyword: keyword, results: results);
+          return ProcedureExamSearch(
+            keyword: keyword,
+            results: results,
+            fallbackDescription: exam.description,
+            fallbackMaterialDescription: exam.materialDescription,
+          );
         } catch (error) {
           return ProcedureExamSearch(
             keyword: keyword,
             results: const [],
-            error: error.toString(),
+            fallbackDescription: exam.description,
+            fallbackMaterialDescription: exam.materialDescription,
+            error: 'Detalhes indisponiveis',
           );
         }
       }),

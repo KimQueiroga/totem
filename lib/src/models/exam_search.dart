@@ -49,11 +49,15 @@ class ProcedureExamSearch {
   const ProcedureExamSearch({
     required this.keyword,
     required this.results,
+    this.fallbackDescription = '',
+    this.fallbackMaterialDescription = '',
     this.error,
   });
 
   final String keyword;
   final List<ExamSearchResult> results;
+  final String fallbackDescription;
+  final String fallbackMaterialDescription;
   final String? error;
 
   bool get hasResults => results.isNotEmpty;
