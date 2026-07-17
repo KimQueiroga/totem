@@ -346,57 +346,66 @@ class _PreAttendanceExamsContentState extends State<PreAttendanceExamsContent> {
       }
 
       final item = _latestExamResults[index];
-      final candidate = _QuestionnaireExamCandidate.fromSearch(item);
 
-      if (candidate.examForCheck.isNotEmpty &&
-          candidate.examForQuestionnaire.isNotEmpty &&
-          candidate.material.isNotEmpty) {
-        selectedExams.add(candidate);
-      }
+      selectedExams.addAll(_QuestionnaireExamCandidate.fromSearch(item));
     }
 
     if (selectedExams.isEmpty) {
       return const [];
     }
 
+    final uniqueSelectedExams = {
+      for (final candidate in selectedExams) candidate.examForCheck: candidate,
+    }.values;
+
     setState(() => _isLoadingQuestionnaires = true);
 
     try {
       final sets = <ExamQuestionnaireSet>[];
+      final errors = <Object>[];
 
-      for (final candidate in selectedExams) {
-        final check = await fetchExamQuestionnaireCheck(
-          candidate.examForCheck,
-          widget.authentication?.token,
-        );
+      for (final candidate in uniqueSelectedExams) {
+        try {
+          final check = await fetchExamQuestionnaireCheck(
+            candidate.examForCheck,
+            widget.authentication?.token,
+          );
 
-        if (!check.examHasQuestionnaire) {
-          continue;
-        }
+          if (!check.examHasQuestionnaire) {
+            continue;
+          }
 
-        final questionnaires = await fetchQuestionnaires(
-          material: candidate.material,
-          exam: candidate.examForQuestionnaire,
-          gender: gender,
-          birthDate: birthDate,
-          clientToken: widget.authentication?.token,
-        );
-        final usefulQuestionnaires = questionnaires
-            .where((questionnaire) => questionnaire.questions.isNotEmpty)
-            .toList();
-
-        if (usefulQuestionnaires.isEmpty) {
-          continue;
-        }
-
-        sets.add(
-          ExamQuestionnaireSet(
-            examCode: candidate.examForQuestionnaire,
-            examLabel: candidate.label,
+          final questionnaires = await fetchQuestionnaires(
             material: candidate.material,
-            questionnaires: usefulQuestionnaires,
-          ),
-        );
+            exam: candidate.examForQuestionnaire,
+            gender: gender,
+            birthDate: birthDate,
+            clientToken: widget.authentication?.token,
+          );
+          final usefulQuestionnaires = questionnaires
+              .where((questionnaire) => questionnaire.questions.isNotEmpty)
+              .toList();
+
+          if (usefulQuestionnaires.isEmpty) {
+            continue;
+          }
+
+          sets.add(
+            ExamQuestionnaireSet(
+              examCode: candidate.examForQuestionnaire,
+              examLabel: candidate.label,
+              material: candidate.material,
+              questionnaires: usefulQuestionnaires,
+            ),
+          );
+        } catch (error) {
+          errors.add(error);
+          continue;
+        }
+      }
+
+      if (sets.isEmpty && errors.isNotEmpty) {
+        throw errors.first;
       }
 
       return sets;
@@ -578,38 +587,71 @@ class _QuestionnaireExamCandidate {
     required this.label,
   });
 
-  factory _QuestionnaireExamCandidate.fromSearch(ProcedureExamSearch item) {
-    final exam = item.firstResult;
-    final examForQuestionnaire = _firstUseful([
-      exam?.mnemonic,
-      item.fallbackExamMnemonic,
-    ]);
-    final material = _firstUseful([
-      exam?.materialMnemonic,
-      item.fallbackMaterialCode,
-    ]);
+  static List<_QuestionnaireExamCandidate> fromSearch(
+    ProcedureExamSearch item,
+  ) {
+    final candidates = <_QuestionnaireExamCandidate>[];
+
+    for (final exam in item.results) {
+      final candidate = _fromValues(
+        exam: exam.mnemonic,
+        material: exam.materialMnemonic,
+        description: _firstUseful([exam.description, item.fallbackDescription]),
+        materialDescription: _firstUseful([
+          exam.materialDescription,
+          item.fallbackMaterialDescription,
+        ]),
+      );
+
+      if (candidate != null) {
+        candidates.add(candidate);
+      }
+    }
+
+    final fallbackCandidate = _fromValues(
+      exam: item.fallbackExamMnemonic,
+      material: item.fallbackMaterialCode,
+      description: item.fallbackDescription,
+      materialDescription: item.fallbackMaterialDescription,
+    );
+
+    if (fallbackCandidate != null) {
+      candidates.add(fallbackCandidate);
+    }
+
+    return candidates;
+  }
+
+  static _QuestionnaireExamCandidate? _fromValues({
+    required String exam,
+    required String material,
+    required String description,
+    required String materialDescription,
+  }) {
+    final examForQuestionnaire = _firstUseful([exam]);
+    final materialForQuestionnaire = _firstUseful([material]);
     final examForCheck = _examQuestionnaireId(
-      material: material,
+      material: materialForQuestionnaire,
       exam: examForQuestionnaire,
     );
-    final description = _firstUseful([
-      exam?.description,
-      item.fallbackDescription,
-    ]);
+
+    if (examForCheck.isEmpty ||
+        examForQuestionnaire.isEmpty ||
+        materialForQuestionnaire.isEmpty) {
+      return null;
+    }
+
     final label = _buildExamLabel(
       examCode: examForQuestionnaire,
       description: description,
-      materialCode: material,
-      materialDescription: _firstUseful([
-        item.fallbackMaterialDescription,
-        exam?.materialDescription,
-      ]),
+      materialCode: materialForQuestionnaire,
+      materialDescription: materialDescription,
     );
 
     return _QuestionnaireExamCandidate(
       examForCheck: examForCheck,
       examForQuestionnaire: examForQuestionnaire,
-      material: material,
+      material: materialForQuestionnaire,
       label: label,
     );
   }
