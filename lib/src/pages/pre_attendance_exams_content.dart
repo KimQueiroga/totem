@@ -420,15 +420,15 @@ class _PreAttendanceExamsContentState extends State<PreAttendanceExamsContent> {
     final normalized = rawGender.toUpperCase();
 
     if (normalized == 'M' || normalized.startsWith('MASC')) {
-      return 'Masculino';
+      return 'M';
     }
 
     if (normalized == 'F' || normalized.startsWith('FEM')) {
-      return 'Feminino';
+      return 'F';
     }
 
-    if (normalized.startsWith('IND')) {
-      return 'Indeterminado';
+    if (normalized == 'I' || normalized.startsWith('IND')) {
+      return 'I';
     }
 
     return rawGender;
