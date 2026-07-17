@@ -16,6 +16,7 @@ class NumericTouchKeyboard extends StatelessWidget {
     this.isUpperCase = false,
     this.includeSpace = false,
     this.onToggleLetterCase,
+    this.compact = false,
   });
 
   final ValueChanged<String> onDigit;
@@ -31,10 +32,16 @@ class NumericTouchKeyboard extends StatelessWidget {
   final bool isUpperCase;
   final bool includeSpace;
   final VoidCallback? onToggleLetterCase;
+  final bool compact;
 
   @override
   Widget build(BuildContext context) {
     final actionButtons = _actionButtons;
+    final buttonHeight = compact ? 40.0 : 52.0;
+    final spacing = compact ? 5.0 : 8.0;
+    final padding = compact
+        ? const EdgeInsets.fromLTRB(12, 8, 12, 10)
+        : const EdgeInsets.fromLTRB(20, 12, 20, 20);
 
     return Material(
       elevation: 18,
@@ -43,7 +50,7 @@ class NumericTouchKeyboard extends StatelessWidget {
       child: SafeArea(
         top: false,
         child: Padding(
-          padding: const EdgeInsets.fromLTRB(20, 12, 20, 20),
+          padding: padding,
           child: ConstrainedBox(
             constraints: const BoxConstraints(maxWidth: 520),
             child: Column(
@@ -58,6 +65,7 @@ class NumericTouchKeyboard extends StatelessWidget {
                             ?.copyWith(
                               color: color,
                               fontWeight: FontWeight.w700,
+                              fontSize: compact ? 16 : null,
                             ),
                       ),
                     ),
@@ -89,7 +97,7 @@ class NumericTouchKeyboard extends StatelessWidget {
                 const SizedBox(height: 8),
                 for (final row in _rows)
                   Padding(
-                    padding: const EdgeInsets.only(bottom: 8),
+                    padding: EdgeInsets.only(bottom: spacing),
                     child: Row(
                       children: [
                         for (final digit in row) ...[
@@ -98,10 +106,11 @@ class NumericTouchKeyboard extends StatelessWidget {
                               key: ValueKey('numeric-touch-key-$digit'),
                               label: digit,
                               color: color,
+                              height: buttonHeight,
                               onPressed: () => onDigit(digit),
                             ),
                           ),
-                          if (digit != row.last) const SizedBox(width: 8),
+                          if (digit != row.last) SizedBox(width: spacing),
                         ],
                       ],
                     ),
@@ -110,8 +119,7 @@ class NumericTouchKeyboard extends StatelessWidget {
                   children: [
                     for (final button in actionButtons) ...[
                       Expanded(child: button),
-                      if (button != actionButtons.last)
-                        const SizedBox(width: 8),
+                      if (button != actionButtons.last) SizedBox(width: spacing),
                     ],
                   ],
                 ),
@@ -141,12 +149,15 @@ class NumericTouchKeyboard extends StatelessWidget {
   }
 
   List<Widget> get _actionButtons {
+    final buttonHeight = compact ? 40.0 : 52.0;
+
     if (layout == TouchKeyboardLayout.alphanumeric) {
       return [
         _KeyboardButton(
           key: const ValueKey('numeric-touch-key-case'),
           label: isUpperCase ? 'abc' : 'ABC',
           color: color,
+          height: buttonHeight,
           isSecondary: true,
           onPressed: onToggleLetterCase ?? () {},
         ),
@@ -155,6 +166,7 @@ class NumericTouchKeyboard extends StatelessWidget {
             key: const ValueKey('numeric-touch-key-space'),
             label: 'Espaco',
             color: color,
+            height: buttonHeight,
             isSecondary: true,
             onPressed: () => onDigit(' '),
           ),
@@ -162,6 +174,7 @@ class NumericTouchKeyboard extends StatelessWidget {
           key: const ValueKey('numeric-touch-key-clear'),
           label: 'Limpar',
           color: color,
+          height: buttonHeight,
           isSecondary: true,
           onPressed: onClear,
         ),
@@ -169,6 +182,7 @@ class NumericTouchKeyboard extends StatelessWidget {
           key: const ValueKey('numeric-touch-key-backspace'),
           icon: Icons.backspace_outlined,
           color: color,
+          height: buttonHeight,
           isSecondary: true,
           onPressed: onBackspace,
         ),
@@ -180,6 +194,7 @@ class NumericTouchKeyboard extends StatelessWidget {
         key: const ValueKey('numeric-touch-key-clear'),
         label: 'Limpar',
         color: color,
+        height: buttonHeight,
         isSecondary: true,
         onPressed: onClear,
       ),
@@ -187,12 +202,14 @@ class NumericTouchKeyboard extends StatelessWidget {
         key: const ValueKey('numeric-touch-key-0'),
         label: '0',
         color: color,
+        height: buttonHeight,
         onPressed: () => onDigit('0'),
       ),
       _KeyboardButton(
         key: const ValueKey('numeric-touch-key-backspace'),
         icon: Icons.backspace_outlined,
         color: color,
+        height: buttonHeight,
         isSecondary: true,
         onPressed: onBackspace,
       ),
@@ -218,6 +235,7 @@ class _KeyboardButton extends StatelessWidget {
     this.label,
     this.icon,
     this.isSecondary = false,
+    this.height = 52,
   });
 
   final String? label;
@@ -225,13 +243,14 @@ class _KeyboardButton extends StatelessWidget {
   final bool isSecondary;
   final Color color;
   final VoidCallback onPressed;
+  final double height;
 
   @override
   Widget build(BuildContext context) {
     final foregroundColor = isSecondary ? color : Colors.white;
 
     return SizedBox(
-      height: 52,
+      height: height,
       child: OutlinedButton(
         style: OutlinedButton.styleFrom(
           backgroundColor: isSecondary ? Colors.white : color,
@@ -252,7 +271,9 @@ class _KeyboardButton extends StatelessWidget {
                 style: Theme.of(context).textTheme.titleLarge?.copyWith(
                   color: foregroundColor,
                   fontWeight: FontWeight.w800,
-                  fontSize: label!.length > 1 ? 18 : 22,
+                  fontSize: height < 52
+                      ? (label!.length > 1 ? 15 : 19)
+                      : (label!.length > 1 ? 18 : 22),
                 ),
               )
             : Icon(icon, color: foregroundColor),

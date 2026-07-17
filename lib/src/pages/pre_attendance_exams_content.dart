@@ -510,6 +510,8 @@ class _ThirdPartyAuthorizationDialogState
 
   @override
   Widget build(BuildContext context) {
+    final keyboardOpen = _activeKeyboardField != null;
+
     return AlertDialog(
       insetPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
       title: const Text('Liberacao de Resultado para Terceiro'),
@@ -520,11 +522,17 @@ class _ThirdPartyAuthorizationDialogState
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Text(
-                'Para liberar a entrega de resultados para terceiros e necessario o preenchimento das informacoes abaixo. Caso nao tenha as informacoes, selecione terceiro nao identificado.',
-                style: Theme.of(context).textTheme.bodyMedium,
-              ),
-              const SizedBox(height: 18),
+              if (!keyboardOpen)
+                Text(
+                  'Para liberar a entrega de resultados para terceiros e necessario o preenchimento das informacoes abaixo. Caso nao tenha as informacoes, selecione terceiro nao identificado.',
+                  style: Theme.of(context).textTheme.bodyMedium,
+                )
+              else
+                Text(
+                  'Digite usando o teclado na tela ou o teclado fisico.',
+                  style: Theme.of(context).textTheme.bodyMedium,
+                ),
+              const SizedBox(height: 12),
               FutureBuilder<List<String>>(
                 future: widget.relationshipsFuture,
                 builder: (context, snapshot) {
@@ -538,118 +546,128 @@ class _ThirdPartyAuthorizationDialogState
                         runSpacing: 12,
                         crossAxisAlignment: WrapCrossAlignment.center,
                         children: [
-                          SizedBox(
-                            width: 330,
-                            child: TextField(
-                              controller: _nameController,
-                              focusNode: _nameFocusNode,
-                              onTap: () => _setActiveKeyboardField(
-                                _ThirdPartyKeyboardField.name,
-                              ),
-                              decoration: const InputDecoration(
-                                labelText: 'Nome Completo *',
-                                border: OutlineInputBorder(),
-                              ),
-                            ),
-                          ),
-                          SizedBox(
-                            width: 190,
-                            child: DropdownButtonFormField<String>(
-                              isExpanded: true,
-                              value: relationships.contains(_relationship)
-                                  ? _relationship
-                                  : null,
-                              items: relationships
-                                  .map(
-                                    (item) => DropdownMenuItem(
-                                      value: item,
-                                      child: Text(item),
-                                    ),
-                                  )
-                                  .toList(),
-                              decoration: const InputDecoration(
-                                labelText: 'Parentesco *',
-                                border: OutlineInputBorder(),
-                                contentPadding: EdgeInsets.symmetric(
-                                  horizontal: 12,
-                                  vertical: 16,
+                          if (!keyboardOpen ||
+                              _activeKeyboardField ==
+                                  _ThirdPartyKeyboardField.name)
+                            SizedBox(
+                              width: keyboardOpen ? 520 : 330,
+                              child: TextField(
+                                controller: _nameController,
+                                focusNode: _nameFocusNode,
+                                onTap: () => _setActiveKeyboardField(
+                                  _ThirdPartyKeyboardField.name,
+                                ),
+                                decoration: const InputDecoration(
+                                  labelText: 'Nome Completo *',
+                                  border: OutlineInputBorder(),
                                 ),
                               ),
-                              onChanged: (value) {
-                                setState(() => _relationship = value);
-                              },
                             ),
-                          ),
-                          SizedBox(
-                            width: 190,
-                            child: DropdownButtonFormField<String>(
-                              isExpanded: true,
-                              value: _documentType,
-                              items: _documentTypes
-                                  .map(
-                                    (item) => DropdownMenuItem(
-                                      value: item,
-                                      child: Text(item),
-                                    ),
-                                  )
-                                  .toList(),
-                              decoration: const InputDecoration(
-                                labelText: 'Documento *',
-                                border: OutlineInputBorder(),
-                                contentPadding: EdgeInsets.symmetric(
-                                  horizontal: 12,
-                                  vertical: 16,
+                          if (!keyboardOpen)
+                            SizedBox(
+                              width: 190,
+                              child: DropdownButtonFormField<String>(
+                                isExpanded: true,
+                                value: relationships.contains(_relationship)
+                                    ? _relationship
+                                    : null,
+                                items: relationships
+                                    .map(
+                                      (item) => DropdownMenuItem(
+                                        value: item,
+                                        child: Text(item),
+                                      ),
+                                    )
+                                    .toList(),
+                                decoration: const InputDecoration(
+                                  labelText: 'Parentesco *',
+                                  border: OutlineInputBorder(),
+                                  contentPadding: EdgeInsets.symmetric(
+                                    horizontal: 12,
+                                    vertical: 16,
+                                  ),
                                 ),
-                              ),
-                              onChanged: (value) {
-                                setState(() => _documentType = value);
-                              },
-                            ),
-                          ),
-                          SizedBox(
-                            width: 190,
-                            child: TextField(
-                              controller: _documentNumberController,
-                              focusNode: _documentNumberFocusNode,
-                              onTap: () => _setActiveKeyboardField(
-                                _ThirdPartyKeyboardField.document,
-                              ),
-                              decoration: const InputDecoration(
-                                labelText: 'No do Documento *',
-                                border: OutlineInputBorder(),
-                              ),
-                            ),
-                          ),
-                          SizedBox(
-                            width: 190,
-                            child: FilledButton(
-                              style: FilledButton.styleFrom(
-                                backgroundColor: widget.primaryColor,
-                                minimumSize: const Size.fromHeight(50),
-                              ),
-                              onPressed: _addAuthorization,
-                              child: const Text('Adicionar'),
-                            ),
-                          ),
-                          Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Checkbox(
-                                value: _unidentified,
-                                activeColor: widget.primaryColor,
                                 onChanged: (value) {
-                                  setState(() {
-                                    _unidentified = value ?? false;
-                                    _errorMessage = null;
-                                  });
+                                  setState(() => _relationship = value);
                                 },
                               ),
-                              const Text('Terceiro nao identificado'),
-                            ],
-                          ),
+                            ),
+                          if (!keyboardOpen)
+                            SizedBox(
+                              width: 190,
+                              child: DropdownButtonFormField<String>(
+                                isExpanded: true,
+                                value: _documentType,
+                                items: _documentTypes
+                                    .map(
+                                      (item) => DropdownMenuItem(
+                                        value: item,
+                                        child: Text(item),
+                                      ),
+                                    )
+                                    .toList(),
+                                decoration: const InputDecoration(
+                                  labelText: 'Documento *',
+                                  border: OutlineInputBorder(),
+                                  contentPadding: EdgeInsets.symmetric(
+                                    horizontal: 12,
+                                    vertical: 16,
+                                  ),
+                                ),
+                                onChanged: (value) {
+                                  setState(() => _documentType = value);
+                                },
+                              ),
+                            ),
+                          if (!keyboardOpen ||
+                              _activeKeyboardField ==
+                                  _ThirdPartyKeyboardField.document)
+                            SizedBox(
+                              width: keyboardOpen ? 280 : 190,
+                              child: TextField(
+                                controller: _documentNumberController,
+                                focusNode: _documentNumberFocusNode,
+                                onTap: () => _setActiveKeyboardField(
+                                  _ThirdPartyKeyboardField.document,
+                                ),
+                                decoration: const InputDecoration(
+                                  labelText: 'No do Documento *',
+                                  border: OutlineInputBorder(),
+                                ),
+                              ),
+                            ),
+                          if (!keyboardOpen)
+                            SizedBox(
+                              width: 190,
+                              child: FilledButton(
+                                style: FilledButton.styleFrom(
+                                  backgroundColor: widget.primaryColor,
+                                  minimumSize: const Size.fromHeight(50),
+                                ),
+                                onPressed: _addAuthorization,
+                                child: const Text('Adicionar'),
+                              ),
+                            ),
+                          if (!keyboardOpen)
+                            Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Checkbox(
+                                  value: _unidentified,
+                                  activeColor: widget.primaryColor,
+                                  onChanged: (value) {
+                                    setState(() {
+                                      _unidentified = value ?? false;
+                                      _errorMessage = null;
+                                    });
+                                  },
+                                ),
+                                const Text('Terceiro nao identificado'),
+                              ],
+                            ),
                         ],
                       ),
-                      if (snapshot.hasError)
+                      if (snapshot.hasError && !keyboardOpen)
                         Padding(
                           padding: const EdgeInsets.only(top: 8),
                           child: Text(
@@ -661,7 +679,7 @@ class _ThirdPartyAuthorizationDialogState
                   );
                 },
               ),
-              if (_activeKeyboardField != null) ...[
+              if (keyboardOpen) ...[
                 const SizedBox(height: 16),
                 Align(
                   alignment: Alignment.center,
@@ -678,6 +696,7 @@ class _ThirdPartyAuthorizationDialogState
                       includeSpace: true,
                       isUpperCase: _isUpperCase,
                       borderRadius: BorderRadius.circular(8),
+                      compact: true,
                       onToggleLetterCase: () {
                         setState(() => _isUpperCase = !_isUpperCase);
                       },
@@ -700,13 +719,15 @@ class _ThirdPartyAuthorizationDialogState
                   ),
                 ),
               ],
-              const SizedBox(height: 18),
-              _ThirdPartyTable(
-                authorizations: _authorizations,
-                onRemove: (index) {
-                  setState(() => _authorizations.removeAt(index));
-                },
-              ),
+              if (!keyboardOpen) ...[
+                const SizedBox(height: 18),
+                _ThirdPartyTable(
+                  authorizations: _authorizations,
+                  onRemove: (index) {
+                    setState(() => _authorizations.removeAt(index));
+                  },
+                ),
+              ],
             ],
           ),
         ),
