@@ -519,6 +519,7 @@ class _ThirdPartyAuthorizationDialogState
                           SizedBox(
                             width: 190,
                             child: DropdownButtonFormField<String>(
+                              isExpanded: true,
                               value: relationships.contains(_relationship)
                                   ? _relationship
                                   : null,
@@ -531,8 +532,12 @@ class _ThirdPartyAuthorizationDialogState
                                   )
                                   .toList(),
                               decoration: const InputDecoration(
-                                labelText: 'Grau de Parentesco *',
+                                labelText: 'Parentesco *',
                                 border: OutlineInputBorder(),
+                                contentPadding: EdgeInsets.symmetric(
+                                  horizontal: 12,
+                                  vertical: 16,
+                                ),
                               ),
                               onChanged: (value) {
                                 setState(() => _relationship = value);
@@ -542,6 +547,7 @@ class _ThirdPartyAuthorizationDialogState
                           SizedBox(
                             width: 190,
                             child: DropdownButtonFormField<String>(
+                              isExpanded: true,
                               value: _documentType,
                               items: _documentTypes
                                   .map(
@@ -552,8 +558,12 @@ class _ThirdPartyAuthorizationDialogState
                                   )
                                   .toList(),
                               decoration: const InputDecoration(
-                                labelText: 'Tipo do Documento *',
+                                labelText: 'Documento *',
                                 border: OutlineInputBorder(),
+                                contentPadding: EdgeInsets.symmetric(
+                                  horizontal: 12,
+                                  vertical: 16,
+                                ),
                               ),
                               onChanged: (value) {
                                 setState(() => _documentType = value);
@@ -722,99 +732,103 @@ class _ThirdPartyTable extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Table(
-      border: TableBorder.all(color: Theme.of(context).dividerColor),
-      columnWidths: const {
-        0: FlexColumnWidth(2),
-        1: FlexColumnWidth(1.2),
-        2: FlexColumnWidth(1.2),
-        3: FlexColumnWidth(1.2),
-        4: FixedColumnWidth(56),
-      },
-      children: [
-        _tableRow(
-          context,
-          const [
-            'Nome do Terceiro',
-            'Parentesco',
-            'Tipo de Documento',
-            'No do Documento',
-            '',
-          ],
-          isHeader: true,
-        ),
-        if (authorizations.isEmpty)
-          TableRow(
-            children: [
-              TableCell(
-                child: Padding(
-                  padding: const EdgeInsets.all(18),
-                  child: Text(
-                    'Nao foi adicionado nenhum terceiro para entrega de resultados.',
-                    textAlign: TextAlign.center,
-                    style: Theme.of(context).textTheme.titleSmall,
-                  ),
-                ),
-              ),
-              const SizedBox.shrink(),
-              const SizedBox.shrink(),
-              const SizedBox.shrink(),
-              const SizedBox.shrink(),
-            ],
-          )
-        else
-          for (var index = 0; index < authorizations.length; index++)
-            _authorizationRow(context, authorizations[index], index),
-      ],
-    );
-  }
+    final borderColor = Theme.of(context).dividerColor;
 
-  TableRow _authorizationRow(
-    BuildContext context,
-    ThirdPartyAuthorization authorization,
-    int index,
-  ) {
-    return TableRow(
-      children: [
-        _tableCell(authorization.name),
-        _tableCell(authorization.relationship),
-        _tableCell(authorization.documentType),
-        _tableCell(authorization.documentNumber),
-        IconButton(
-          tooltip: 'Remover',
-          onPressed: () => onRemove(index),
-          icon: const Icon(Icons.delete_outline),
-        ),
-      ],
-    );
-  }
-
-  TableRow _tableRow(
-    BuildContext context,
-    List<String> values, {
-    bool isHeader = false,
-  }) {
-    return TableRow(
-      decoration: isHeader
-          ? BoxDecoration(color: Theme.of(context).colorScheme.surfaceVariant)
-          : null,
-      children: values
-          .map(
-            (value) => _tableCell(
-              value,
-              isHeader: isHeader,
+    return Container(
+      decoration: BoxDecoration(border: Border.all(color: borderColor)),
+      child: Column(
+        children: [
+          DecoratedBox(
+            decoration: BoxDecoration(
+              color: Theme.of(context).colorScheme.surfaceVariant,
+              border: Border(bottom: BorderSide(color: borderColor)),
             ),
-          )
-          .toList(),
+            child: const Row(
+              children: [
+                Expanded(flex: 2, child: _TableText('Nome do Terceiro', true)),
+                Expanded(child: _TableText('Parentesco', true)),
+                Expanded(child: _TableText('Documento', true)),
+                Expanded(child: _TableText('No do Documento', true)),
+                SizedBox(width: 52),
+              ],
+            ),
+          ),
+          if (authorizations.isEmpty)
+            Padding(
+              padding: const EdgeInsets.all(22),
+              child: Text(
+                'Nao foi adicionado nenhum terceiro para entrega de resultados.',
+                textAlign: TextAlign.center,
+                style: Theme.of(context).textTheme.titleSmall,
+              ),
+            )
+          else
+            for (var index = 0; index < authorizations.length; index++)
+              _ThirdPartyRow(
+                authorization: authorizations[index],
+                borderColor: borderColor,
+                onRemove: () => onRemove(index),
+              ),
+        ],
+      ),
     );
   }
+}
 
-  Widget _tableCell(String value, {bool isHeader = false}) {
+class _ThirdPartyRow extends StatelessWidget {
+  const _ThirdPartyRow({
+    required this.authorization,
+    required this.borderColor,
+    required this.onRemove,
+  });
+
+  final ThirdPartyAuthorization authorization;
+  final Color borderColor;
+  final VoidCallback onRemove;
+
+  @override
+  Widget build(BuildContext context) {
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        border: Border(top: BorderSide(color: borderColor)),
+      ),
+      child: Row(
+      children: [
+          Expanded(flex: 2, child: _TableText(authorization.name, false)),
+          Expanded(child: _TableText(authorization.relationship, false)),
+          Expanded(child: _TableText(authorization.documentType, false)),
+          Expanded(child: _TableText(authorization.documentNumber, false)),
+          SizedBox(
+            width: 52,
+            child: IconButton(
+              tooltip: 'Remover',
+              onPressed: onRemove,
+              icon: const Icon(Icons.delete_outline),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _TableText extends StatelessWidget {
+  const _TableText(this.value, this.isHeader);
+
+  final String value;
+  final bool isHeader;
+
+  @override
+  Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 9),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
       child: Text(
         value,
-        style: TextStyle(fontWeight: isHeader ? FontWeight.w700 : null),
+        maxLines: 2,
+        overflow: TextOverflow.ellipsis,
+        style: TextStyle(
+          fontWeight: isHeader ? FontWeight.w700 : null,
+        ),
       ),
     );
   }
