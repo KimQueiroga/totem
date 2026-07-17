@@ -210,6 +210,21 @@ Future<List<ExamSearchResult>> fetchExamSearch(
       .toList();
 }
 
+Future<List<String>> fetchRelationships() async {
+  final response = await http.get(
+    Uri.parse('$bffBaseUrl/relationships'),
+    headers: {'Accept': 'application/json'},
+  );
+
+  if (response.statusCode < 200 || response.statusCode >= 300) {
+    throw Exception(
+      'BFF retornou HTTP ${response.statusCode}: ${_truncate(response.body)}',
+    );
+  }
+
+  return _extractRelationshipLabels(jsonDecode(response.body));
+}
+
 Future<BarcodeResultPrint> printBarcodeResult(
   String barcode, {
   String? printer,
@@ -246,6 +261,73 @@ Future<BarcodeResultPrint> printBarcodeResult(
   }
 
   return BarcodeResultPrint.fromJson(payload);
+}
+
+List<String> _extractRelationshipLabels(Object? payload) {
+  final labels = <String>[];
+
+  void addLabel(Object? value) {
+    final label = _relationshipLabel(value);
+
+    if (label.isNotEmpty && !labels.contains(label)) {
+      labels.add(label);
+    }
+  }
+
+  if (payload is List) {
+    for (final item in payload) {
+      addLabel(item);
+    }
+  } else if (payload is Map<String, dynamic>) {
+    for (final key in [
+      'data',
+      'items',
+      'result',
+      'results',
+      'parentescos',
+      'lista',
+    ]) {
+      final value = payload[key];
+
+      if (value is List) {
+        for (final item in value) {
+          addLabel(item);
+        }
+      }
+    }
+
+    if (labels.isEmpty) {
+      addLabel(payload);
+    }
+  }
+
+  return labels;
+}
+
+String _relationshipLabel(Object? value) {
+  if (value is String) {
+    return value.trim();
+  }
+
+  if (value is Map<String, dynamic>) {
+    for (final key in [
+      'descricao',
+      'description',
+      'nome',
+      'name',
+      'label',
+      'valor',
+      'value',
+    ]) {
+      final field = value[key];
+
+      if (field is String && field.trim().isNotEmpty) {
+        return field.trim();
+      }
+    }
+  }
+
+  return '';
 }
 
 String _truncate(String value) {

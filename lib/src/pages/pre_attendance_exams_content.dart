@@ -4,9 +4,11 @@ import '../models/client_authentication.dart';
 import '../models/exam_search.dart';
 import '../models/pre_attendance.dart';
 import '../models/terminal_visual_identity.dart';
+import '../models/third_party_authorization.dart';
+import '../services/terminal_api.dart';
 import '../widgets/flow_top_bar.dart';
 
-class PreAttendanceExamsContent extends StatelessWidget {
+class PreAttendanceExamsContent extends StatefulWidget {
   const PreAttendanceExamsContent({
     super.key,
     required this.identity,
@@ -29,9 +31,38 @@ class PreAttendanceExamsContent extends StatelessWidget {
   final VoidCallback onHome;
 
   @override
+  State<PreAttendanceExamsContent> createState() =>
+      _PreAttendanceExamsContentState();
+}
+
+class _PreAttendanceExamsContentState extends State<PreAttendanceExamsContent> {
+  final List<_ExamSelection> _examSelections = [];
+  List<ThirdPartyAuthorization> _thirdPartyAuthorizations = const [];
+  bool _thirdPartyUnidentified = false;
+  late Future<List<String>> _relationships;
+
+  @override
+  void initState() {
+    super.initState();
+    _relationships = fetchRelationships();
+  }
+
+  @override
+  void didUpdateWidget(covariant PreAttendanceExamsContent oldWidget) {
+    super.didUpdateWidget(oldWidget);
+
+    if (oldWidget.examSearchFuture != widget.examSearchFuture) {
+      _examSelections.clear();
+      _thirdPartyAuthorizations = const [];
+      _thirdPartyUnidentified = false;
+      _relationships = fetchRelationships();
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
     final primaryColor =
-        identity.primaryColor ?? Theme.of(context).colorScheme.primary;
+        widget.identity.primaryColor ?? Theme.of(context).colorScheme.primary;
 
     return LayoutBuilder(
       builder: (context, constraints) {
@@ -45,16 +76,16 @@ class PreAttendanceExamsContent extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               FlowTopBar(
-                logoBytes: identity.logoBytes,
+                logoBytes: widget.identity.logoBytes,
                 primaryColor: primaryColor,
-                title: flowTitle,
-                onBack: onBack,
-                onHome: onHome,
+                title: widget.flowTitle,
+                onBack: widget.onBack,
+                onHome: widget.onHome,
               ),
               const SizedBox(height: 12),
               _PatientSummary(
-                authentication: authentication,
-                clientCode: clientCode,
+                authentication: widget.authentication,
+                clientCode: widget.clientCode,
                 primaryColor: primaryColor,
               ),
               const SizedBox(height: 14),
@@ -62,7 +93,7 @@ class PreAttendanceExamsContent extends StatelessWidget {
                 'Exames autorizados',
                 textAlign: TextAlign.center,
                 style: Theme.of(context).textTheme.displaySmall?.copyWith(
-                  color: identity.patientNameColor ?? primaryColor,
+                  color: widget.identity.patientNameColor ?? primaryColor,
                   fontWeight: FontWeight.w700,
                 ),
               ),
@@ -70,7 +101,7 @@ class PreAttendanceExamsContent extends StatelessWidget {
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16),
                 child: Text(
-                  'Guia ${guide.operatorGuideNumber} · Pre atendimento ${guide.preAttendanceNumber}',
+                  'Guia ${widget.guide.operatorGuideNumber} · Pre atendimento ${widget.guide.preAttendanceNumber}',
                   textAlign: TextAlign.center,
                   style: Theme.of(context).textTheme.titleMedium,
                 ),
@@ -78,7 +109,7 @@ class PreAttendanceExamsContent extends StatelessWidget {
               const SizedBox(height: 18),
               Expanded(
                 child: FutureBuilder<List<ProcedureExamSearch>>(
-                  future: examSearchFuture,
+                  future: widget.examSearchFuture,
                   builder: (context, snapshot) {
                     if (snapshot.connectionState != ConnectionState.done) {
                       return const Center(child: CircularProgressIndicator());
@@ -94,6 +125,8 @@ class PreAttendanceExamsContent extends StatelessWidget {
                     }
 
                     final results = snapshot.data ?? const [];
+                    _syncExamSelections(results);
+
                     if (results.isEmpty) {
                       return _ErrorMessage(
                         primaryColor: primaryColor,
@@ -105,7 +138,9 @@ class PreAttendanceExamsContent extends StatelessWidget {
 
                     return _ExamResultTable(
                       results: results,
+                      selections: _examSelections,
                       primaryColor: primaryColor,
+                      onSelectionChanged: () => setState(() {}),
                     );
                   },
                 ),
@@ -113,15 +148,37 @@ class PreAttendanceExamsContent extends StatelessWidget {
               const SizedBox(height: 18),
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 20),
-                child: FilledButton(
-                  style: FilledButton.styleFrom(
-                    backgroundColor: primaryColor,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: OutlinedButton(
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: primaryColor,
+                          side: BorderSide(color: primaryColor),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          minimumSize: const Size.fromHeight(52),
+                        ),
+                        onPressed: widget.onBack,
+                        child: const Text('Voltar'),
+                      ),
                     ),
-                  ),
-                  onPressed: onBack,
-                  child: const Text('Voltar'),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: FilledButton(
+                        style: FilledButton.styleFrom(
+                          backgroundColor: primaryColor,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          minimumSize: const Size.fromHeight(52),
+                        ),
+                        onPressed: _handleNext,
+                        child: const Text('Avancar'),
+                      ),
+                    ),
+                  ],
                 ),
               ),
               const SizedBox(height: 12),
@@ -129,6 +186,97 @@ class PreAttendanceExamsContent extends StatelessWidget {
           ),
         );
       },
+    );
+  }
+
+  void _syncExamSelections(List<ProcedureExamSearch> results) {
+    if (_examSelections.length == results.length) {
+      return;
+    }
+
+    _examSelections
+      ..clear()
+      ..addAll(
+        results.map(
+          (item) => _ExamSelection(key: item.keyword),
+        ),
+      );
+  }
+
+  Future<void> _handleNext() async {
+    if (_examSelections.isEmpty ||
+        _examSelections.every((selection) => selection.excluded)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('E preciso manter pelo menos um exame para avancar.'),
+        ),
+      );
+      return;
+    }
+
+    final authorizeThirdParty = await showDialog<bool>(
+      context: context,
+      builder: (context) {
+        final primaryColor =
+            widget.identity.primaryColor ??
+            Theme.of(context).colorScheme.primary;
+
+        return AlertDialog(
+          title: const Text('Autorizar terceiros'),
+          content: const Text(
+            'Deseja autorizar terceiros a obter o resultado deste pedido?',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(false),
+              child: const Text('Nao'),
+            ),
+            FilledButton(
+              style: FilledButton.styleFrom(backgroundColor: primaryColor),
+              onPressed: () => Navigator.of(context).pop(true),
+              child: const Text('Sim'),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (authorizeThirdParty != true) {
+      _showPendingFinalizationMessage();
+      return;
+    }
+
+    final result = await showDialog<_ThirdPartyAuthorizationResult>(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => _ThirdPartyAuthorizationDialog(
+        primaryColor:
+            widget.identity.primaryColor ?? Theme.of(context).colorScheme.primary,
+        relationshipsFuture: _relationships,
+        initialAuthorizations: _thirdPartyAuthorizations,
+        initialUnidentified: _thirdPartyUnidentified,
+      ),
+    );
+
+    if (result == null) {
+      return;
+    }
+
+    setState(() {
+      _thirdPartyAuthorizations = result.authorizations;
+      _thirdPartyUnidentified = result.unidentified;
+    });
+
+    _showPendingFinalizationMessage();
+  }
+
+  void _showPendingFinalizationMessage() {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text(
+          'Informacoes registradas no fluxo. Envio sera feito na finalizacao do pedido.',
+        ),
+      ),
     );
   }
 
@@ -250,11 +398,440 @@ class _ErrorMessage extends StatelessWidget {
   }
 }
 
+class _ExamSelection {
+  _ExamSelection({required this.key});
+
+  final String key;
+  bool delivered = true;
+  bool excluded = false;
+}
+
+class _ThirdPartyAuthorizationResult {
+  const _ThirdPartyAuthorizationResult({
+    required this.authorizations,
+    required this.unidentified,
+  });
+
+  final List<ThirdPartyAuthorization> authorizations;
+  final bool unidentified;
+}
+
+class _ThirdPartyAuthorizationDialog extends StatefulWidget {
+  const _ThirdPartyAuthorizationDialog({
+    required this.primaryColor,
+    required this.relationshipsFuture,
+    required this.initialAuthorizations,
+    required this.initialUnidentified,
+  });
+
+  final Color primaryColor;
+  final Future<List<String>> relationshipsFuture;
+  final List<ThirdPartyAuthorization> initialAuthorizations;
+  final bool initialUnidentified;
+
+  @override
+  State<_ThirdPartyAuthorizationDialog> createState() =>
+      _ThirdPartyAuthorizationDialogState();
+}
+
+class _ThirdPartyAuthorizationDialogState
+    extends State<_ThirdPartyAuthorizationDialog> {
+  static const _documentTypes = [
+    'CPF',
+    'RG',
+    'CNH',
+    'Passaporte',
+    'Carteira de Trabalho',
+  ];
+  static const _fallbackRelationships = [
+    'Conjuge',
+    'Pai/Mae',
+    'Filho/Filha',
+    'Irmao/Irma',
+    'Tio/Tia',
+    'Sobrinho/Sobrinha',
+    'Avo/Avo',
+    'Outros',
+  ];
+
+  final _nameController = TextEditingController();
+  final _documentNumberController = TextEditingController();
+  final _authorizations = <ThirdPartyAuthorization>[];
+  String? _relationship;
+  String? _documentType;
+  bool _unidentified = false;
+  String? _errorMessage;
+
+  @override
+  void initState() {
+    super.initState();
+    _authorizations.addAll(widget.initialAuthorizations);
+    _unidentified = widget.initialUnidentified;
+  }
+
+  @override
+  void dispose() {
+    _nameController.dispose();
+    _documentNumberController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      insetPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
+      title: const Text('Liberacao de Resultado para Terceiro'),
+      content: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 840, maxHeight: 620),
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Text(
+                'Para liberar a entrega de resultados para terceiros e necessario o preenchimento das informacoes abaixo. Caso nao tenha as informacoes, selecione terceiro nao identificado.',
+                style: Theme.of(context).textTheme.bodyMedium,
+              ),
+              const SizedBox(height: 18),
+              FutureBuilder<List<String>>(
+                future: widget.relationshipsFuture,
+                builder: (context, snapshot) {
+                  final relationships = _relationshipOptions(snapshot.data);
+
+                  return Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      Wrap(
+                        spacing: 12,
+                        runSpacing: 12,
+                        crossAxisAlignment: WrapCrossAlignment.center,
+                        children: [
+                          SizedBox(
+                            width: 330,
+                            child: TextField(
+                              controller: _nameController,
+                              decoration: const InputDecoration(
+                                labelText: 'Nome Completo *',
+                                border: OutlineInputBorder(),
+                              ),
+                            ),
+                          ),
+                          SizedBox(
+                            width: 190,
+                            child: DropdownButtonFormField<String>(
+                              value: relationships.contains(_relationship)
+                                  ? _relationship
+                                  : null,
+                              items: relationships
+                                  .map(
+                                    (item) => DropdownMenuItem(
+                                      value: item,
+                                      child: Text(item),
+                                    ),
+                                  )
+                                  .toList(),
+                              decoration: const InputDecoration(
+                                labelText: 'Grau de Parentesco *',
+                                border: OutlineInputBorder(),
+                              ),
+                              onChanged: (value) {
+                                setState(() => _relationship = value);
+                              },
+                            ),
+                          ),
+                          SizedBox(
+                            width: 190,
+                            child: DropdownButtonFormField<String>(
+                              value: _documentType,
+                              items: _documentTypes
+                                  .map(
+                                    (item) => DropdownMenuItem(
+                                      value: item,
+                                      child: Text(item),
+                                    ),
+                                  )
+                                  .toList(),
+                              decoration: const InputDecoration(
+                                labelText: 'Tipo do Documento *',
+                                border: OutlineInputBorder(),
+                              ),
+                              onChanged: (value) {
+                                setState(() => _documentType = value);
+                              },
+                            ),
+                          ),
+                          SizedBox(
+                            width: 190,
+                            child: TextField(
+                              controller: _documentNumberController,
+                              decoration: const InputDecoration(
+                                labelText: 'No do Documento *',
+                                border: OutlineInputBorder(),
+                              ),
+                            ),
+                          ),
+                          SizedBox(
+                            width: 190,
+                            child: FilledButton(
+                              style: FilledButton.styleFrom(
+                                backgroundColor: widget.primaryColor,
+                                minimumSize: const Size.fromHeight(50),
+                              ),
+                              onPressed: _addAuthorization,
+                              child: const Text('Adicionar'),
+                            ),
+                          ),
+                          Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Checkbox(
+                                value: _unidentified,
+                                activeColor: widget.primaryColor,
+                                onChanged: (value) {
+                                  setState(() {
+                                    _unidentified = value ?? false;
+                                    _errorMessage = null;
+                                  });
+                                },
+                              ),
+                              const Text('Terceiro nao identificado'),
+                            ],
+                          ),
+                        ],
+                      ),
+                      if (snapshot.hasError)
+                        Padding(
+                          padding: const EdgeInsets.only(top: 8),
+                          child: Text(
+                            'Nao foi possivel carregar parentescos da API. Usando lista padrao.',
+                            style: TextStyle(color: widget.primaryColor),
+                          ),
+                        ),
+                    ],
+                  );
+                },
+              ),
+              if (_errorMessage != null) ...[
+                const SizedBox(height: 12),
+                Text(
+                  _errorMessage!,
+                  style: TextStyle(
+                    color: Theme.of(context).colorScheme.error,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
+              const SizedBox(height: 18),
+              _ThirdPartyTable(
+                authorizations: _authorizations,
+                onRemove: (index) {
+                  setState(() => _authorizations.removeAt(index));
+                },
+              ),
+            ],
+          ),
+        ),
+      ),
+      actions: [
+        OutlinedButton(
+          style: OutlinedButton.styleFrom(
+            foregroundColor: widget.primaryColor,
+            side: BorderSide(color: widget.primaryColor),
+          ),
+          onPressed: () => Navigator.of(context).pop(),
+          child: const Text('Fechar'),
+        ),
+        FilledButton(
+          style: FilledButton.styleFrom(backgroundColor: widget.primaryColor),
+          onPressed: _save,
+          child: const Text('Salvar Informacoes'),
+        ),
+      ],
+    );
+  }
+
+  List<String> _relationshipOptions(List<String>? apiItems) {
+    final items = [
+      if (apiItems != null)
+        for (final item in apiItems)
+          if (item.trim().isNotEmpty) item.trim(),
+    ];
+
+    return items.isEmpty ? _fallbackRelationships : items;
+  }
+
+  void _addAuthorization() {
+    final name = _nameController.text.trim();
+    final documentNumber = _documentNumberController.text.trim();
+    final relationship = _relationship;
+    final documentType = _documentType;
+
+    if (name.isEmpty ||
+        relationship == null ||
+        documentType == null ||
+        documentNumber.isEmpty) {
+      setState(() {
+        _errorMessage = 'Preencha todos os campos obrigatorios para adicionar.';
+      });
+      return;
+    }
+
+    setState(() {
+      _authorizations.add(
+        ThirdPartyAuthorization(
+          name: name,
+          relationship: relationship,
+          documentType: documentType,
+          documentNumber: documentNumber,
+        ),
+      );
+      _nameController.clear();
+      _documentNumberController.clear();
+      _relationship = null;
+      _documentType = null;
+      _errorMessage = null;
+    });
+  }
+
+  void _save() {
+    if (_authorizations.isEmpty && !_unidentified) {
+      setState(() {
+        _errorMessage =
+            'Adicione ao menos um terceiro ou marque terceiro nao identificado.';
+      });
+      return;
+    }
+
+    Navigator.of(context).pop(
+      _ThirdPartyAuthorizationResult(
+        authorizations: List.unmodifiable(_authorizations),
+        unidentified: _unidentified,
+      ),
+    );
+  }
+}
+
+class _ThirdPartyTable extends StatelessWidget {
+  const _ThirdPartyTable({
+    required this.authorizations,
+    required this.onRemove,
+  });
+
+  final List<ThirdPartyAuthorization> authorizations;
+  final void Function(int index) onRemove;
+
+  @override
+  Widget build(BuildContext context) {
+    return Table(
+      border: TableBorder.all(color: Theme.of(context).dividerColor),
+      columnWidths: const {
+        0: FlexColumnWidth(2),
+        1: FlexColumnWidth(1.2),
+        2: FlexColumnWidth(1.2),
+        3: FlexColumnWidth(1.2),
+        4: FixedColumnWidth(56),
+      },
+      children: [
+        _tableRow(
+          context,
+          const [
+            'Nome do Terceiro',
+            'Parentesco',
+            'Tipo de Documento',
+            'No do Documento',
+            '',
+          ],
+          isHeader: true,
+        ),
+        if (authorizations.isEmpty)
+          TableRow(
+            children: [
+              TableCell(
+                child: Padding(
+                  padding: const EdgeInsets.all(18),
+                  child: Text(
+                    'Nao foi adicionado nenhum terceiro para entrega de resultados.',
+                    textAlign: TextAlign.center,
+                    style: Theme.of(context).textTheme.titleSmall,
+                  ),
+                ),
+              ),
+              const SizedBox.shrink(),
+              const SizedBox.shrink(),
+              const SizedBox.shrink(),
+              const SizedBox.shrink(),
+            ],
+          )
+        else
+          for (var index = 0; index < authorizations.length; index++)
+            _authorizationRow(context, authorizations[index], index),
+      ],
+    );
+  }
+
+  TableRow _authorizationRow(
+    BuildContext context,
+    ThirdPartyAuthorization authorization,
+    int index,
+  ) {
+    return TableRow(
+      children: [
+        _tableCell(authorization.name),
+        _tableCell(authorization.relationship),
+        _tableCell(authorization.documentType),
+        _tableCell(authorization.documentNumber),
+        IconButton(
+          tooltip: 'Remover',
+          onPressed: () => onRemove(index),
+          icon: const Icon(Icons.delete_outline),
+        ),
+      ],
+    );
+  }
+
+  TableRow _tableRow(
+    BuildContext context,
+    List<String> values, {
+    bool isHeader = false,
+  }) {
+    return TableRow(
+      decoration: isHeader
+          ? BoxDecoration(color: Theme.of(context).colorScheme.surfaceVariant)
+          : null,
+      children: values
+          .map(
+            (value) => _tableCell(
+              value,
+              isHeader: isHeader,
+            ),
+          )
+          .toList(),
+    );
+  }
+
+  Widget _tableCell(String value, {bool isHeader = false}) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 9),
+      child: Text(
+        value,
+        style: TextStyle(fontWeight: isHeader ? FontWeight.w700 : null),
+      ),
+    );
+  }
+}
+
 class _ExamResultTable extends StatelessWidget {
-  const _ExamResultTable({required this.results, required this.primaryColor});
+  const _ExamResultTable({
+    required this.results,
+    required this.selections,
+    required this.primaryColor,
+    required this.onSelectionChanged,
+  });
 
   final List<ProcedureExamSearch> results;
+  final List<_ExamSelection> selections;
   final Color primaryColor;
+  final VoidCallback onSelectionChanged;
 
   @override
   Widget build(BuildContext context) {
@@ -274,7 +851,9 @@ class _ExamResultTable extends StatelessWidget {
             DataColumn(label: Text('Descricao')),
             DataColumn(label: Text('Condicao amostra')),
           ],
-          rows: results.map((item) {
+          rows: List.generate(results.length, (index) {
+            final item = results[index];
+            final selection = selections[index];
             final exam = item.firstResult;
             final description = _firstNotEmpty([
               exam?.description,
@@ -305,8 +884,31 @@ class _ExamResultTable extends StatelessWidget {
 
             return DataRow(
               cells: [
-                const DataCell(Checkbox(value: true, onChanged: null)),
-                const DataCell(Checkbox(value: false, onChanged: null)),
+                DataCell(
+                  Checkbox(
+                    value: selection.delivered,
+                    activeColor: primaryColor,
+                    onChanged: selection.excluded
+                        ? null
+                        : (value) {
+                            selection.delivered = value ?? false;
+                            onSelectionChanged();
+                          },
+                  ),
+                ),
+                DataCell(
+                  Checkbox(
+                    value: selection.excluded,
+                    activeColor: primaryColor,
+                    onChanged: (value) {
+                      selection.excluded = value ?? false;
+                      if (selection.excluded) {
+                        selection.delivered = false;
+                      }
+                      onSelectionChanged();
+                    },
+                  ),
+                ),
                 DataCell(Text(examLabel)),
                 // TODO: preencher pela rota especifica de conservante quando o
                 // contrato existir. basic/exams e uma consulta geral de exames.
