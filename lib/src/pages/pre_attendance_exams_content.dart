@@ -7,6 +7,7 @@ import '../models/terminal_visual_identity.dart';
 import '../models/third_party_authorization.dart';
 import '../services/terminal_api.dart';
 import '../widgets/flow_top_bar.dart';
+import '../widgets/numeric_touch_keyboard.dart';
 
 class PreAttendanceExamsContent extends StatefulWidget {
   const PreAttendanceExamsContent({
@@ -416,6 +417,31 @@ class _ThirdPartyAuthorizationResult {
   final bool unidentified;
 }
 
+enum _ThirdPartyKeyboardField {
+  name('Nome completo'),
+  document('Documento');
+
+  const _ThirdPartyKeyboardField(this.label);
+
+  final String label;
+
+  TextEditingController controller(
+    _ThirdPartyAuthorizationDialogState state,
+  ) {
+    return switch (this) {
+      _ThirdPartyKeyboardField.name => state._nameController,
+      _ThirdPartyKeyboardField.document => state._documentNumberController,
+    };
+  }
+
+  FocusNode focusNode(_ThirdPartyAuthorizationDialogState state) {
+    return switch (this) {
+      _ThirdPartyKeyboardField.name => state._nameFocusNode,
+      _ThirdPartyKeyboardField.document => state._documentNumberFocusNode,
+    };
+  }
+}
+
 class _ThirdPartyAuthorizationDialog extends StatefulWidget {
   const _ThirdPartyAuthorizationDialog({
     required this.primaryColor,
@@ -456,10 +482,14 @@ class _ThirdPartyAuthorizationDialogState
 
   final _nameController = TextEditingController();
   final _documentNumberController = TextEditingController();
+  final _nameFocusNode = FocusNode();
+  final _documentNumberFocusNode = FocusNode();
   final _authorizations = <ThirdPartyAuthorization>[];
+  _ThirdPartyKeyboardField? _activeKeyboardField;
   String? _relationship;
   String? _documentType;
   bool _unidentified = false;
+  bool _isUpperCase = false;
   String? _errorMessage;
 
   @override
@@ -473,6 +503,8 @@ class _ThirdPartyAuthorizationDialogState
   void dispose() {
     _nameController.dispose();
     _documentNumberController.dispose();
+    _nameFocusNode.dispose();
+    _documentNumberFocusNode.dispose();
     super.dispose();
   }
 
@@ -510,6 +542,10 @@ class _ThirdPartyAuthorizationDialogState
                             width: 330,
                             child: TextField(
                               controller: _nameController,
+                              focusNode: _nameFocusNode,
+                              onTap: () => _setActiveKeyboardField(
+                                _ThirdPartyKeyboardField.name,
+                              ),
                               decoration: const InputDecoration(
                                 labelText: 'Nome Completo *',
                                 border: OutlineInputBorder(),
@@ -574,6 +610,10 @@ class _ThirdPartyAuthorizationDialogState
                             width: 190,
                             child: TextField(
                               controller: _documentNumberController,
+                              focusNode: _documentNumberFocusNode,
+                              onTap: () => _setActiveKeyboardField(
+                                _ThirdPartyKeyboardField.document,
+                              ),
                               decoration: const InputDecoration(
                                 labelText: 'No do Documento *',
                                 border: OutlineInputBorder(),
@@ -621,6 +661,35 @@ class _ThirdPartyAuthorizationDialogState
                   );
                 },
               ),
+              if (_activeKeyboardField != null) ...[
+                const SizedBox(height: 16),
+                Align(
+                  alignment: Alignment.center,
+                  child: SizedBox(
+                    width: 560,
+                    child: NumericTouchKeyboard(
+                      color: widget.primaryColor,
+                      activeFieldLabel: _activeKeyboardField!.label,
+                      nextLabel:
+                          _activeKeyboardField == _ThirdPartyKeyboardField.name
+                          ? 'Proximo'
+                          : 'Concluir',
+                      layout: TouchKeyboardLayout.alphanumeric,
+                      includeSpace: true,
+                      isUpperCase: _isUpperCase,
+                      borderRadius: BorderRadius.circular(8),
+                      onToggleLetterCase: () {
+                        setState(() => _isUpperCase = !_isUpperCase);
+                      },
+                      onDigit: _appendKeyboardValue,
+                      onBackspace: _backspaceKeyboardValue,
+                      onClear: _clearKeyboardField,
+                      onNext: _goToNextKeyboardField,
+                      onClose: _closeKeyboard,
+                    ),
+                  ),
+                ),
+              ],
               if (_errorMessage != null) ...[
                 const SizedBox(height: 12),
                 Text(
@@ -668,6 +737,93 @@ class _ThirdPartyAuthorizationDialogState
     ];
 
     return items.isEmpty ? _fallbackRelationships : items;
+  }
+
+  void _setActiveKeyboardField(_ThirdPartyKeyboardField field) {
+    setState(() => _activeKeyboardField = field);
+
+    field.focusNode(this).requestFocus();
+  }
+
+  void _appendKeyboardValue(String value) {
+    final field = _activeKeyboardField;
+
+    if (field == null) {
+      return;
+    }
+
+    final controller = field.controller(this);
+    final selection = controller.selection;
+    final text = controller.text;
+    final start = selection.start >= 0 ? selection.start : text.length;
+    final end = selection.end >= 0 ? selection.end : text.length;
+    final newText = text.replaceRange(start, end, value);
+    final offset = start + value.length;
+
+    controller.value = TextEditingValue(
+      text: newText,
+      selection: TextSelection.collapsed(offset: offset),
+    );
+  }
+
+  void _backspaceKeyboardValue() {
+    final field = _activeKeyboardField;
+
+    if (field == null) {
+      return;
+    }
+
+    final controller = field.controller(this);
+    final selection = controller.selection;
+    final text = controller.text;
+
+    if (text.isEmpty) {
+      return;
+    }
+
+    if (selection.start != selection.end &&
+        selection.start >= 0 &&
+        selection.end >= 0) {
+      controller.value = TextEditingValue(
+        text: text.replaceRange(selection.start, selection.end, ''),
+        selection: TextSelection.collapsed(offset: selection.start),
+      );
+      return;
+    }
+
+    final offset = selection.start > 0 ? selection.start : text.length;
+
+    if (offset <= 0) {
+      return;
+    }
+
+    controller.value = TextEditingValue(
+      text: text.replaceRange(offset - 1, offset, ''),
+      selection: TextSelection.collapsed(offset: offset - 1),
+    );
+  }
+
+  void _clearKeyboardField() {
+    final field = _activeKeyboardField;
+
+    if (field == null) {
+      return;
+    }
+
+    field.controller(this).clear();
+  }
+
+  void _goToNextKeyboardField() {
+    if (_activeKeyboardField == _ThirdPartyKeyboardField.name) {
+      _setActiveKeyboardField(_ThirdPartyKeyboardField.document);
+      return;
+    }
+
+    _closeKeyboard();
+  }
+
+  void _closeKeyboard() {
+    setState(() => _activeKeyboardField = null);
   }
 
   void _addAuthorization() {
