@@ -6,6 +6,7 @@ import '../models/barcode_result_print.dart';
 import '../models/client_authentication.dart';
 import '../models/exam_search.dart';
 import '../models/pre_attendance.dart';
+import '../models/questionnaire.dart';
 import '../models/terminal_context.dart';
 import '../models/terminal_visual_identity.dart';
 
@@ -207,6 +208,77 @@ Future<List<ExamSearchResult>> fetchExamSearch(
   return payload
       .whereType<Map<String, dynamic>>()
       .map(ExamSearchResult.fromJson)
+      .toList();
+}
+
+Future<ExamQuestionnaireCheck> fetchExamQuestionnaireCheck(
+  String examId,
+  String? clientToken,
+) async {
+  final queryParameters = <String, String>{};
+
+  if (clientToken != null && clientToken.isNotEmpty) {
+    queryParameters['clientToken'] = clientToken;
+  }
+
+  final uri = Uri.parse(
+    '$bffBaseUrl/exams/${Uri.encodeComponent(examId)}/questionnaire',
+  ).replace(queryParameters: queryParameters.isEmpty ? null : queryParameters);
+  final response = await http.get(uri, headers: {'Accept': 'application/json'});
+
+  if (response.statusCode < 200 || response.statusCode >= 300) {
+    throw Exception(
+      'BFF retornou HTTP ${response.statusCode}: ${_truncate(response.body)}',
+    );
+  }
+
+  final payload = jsonDecode(response.body);
+
+  if (payload is! Map<String, dynamic>) {
+    throw Exception('Resposta do BFF de questionario nao e um objeto JSON.');
+  }
+
+  return ExamQuestionnaireCheck.fromJson(payload);
+}
+
+Future<List<ExamQuestionnaire>> fetchQuestionnaires({
+  required String material,
+  required String exam,
+  required String gender,
+  required String birthDate,
+  String? clientToken,
+}) async {
+  final queryParameters = <String, String>{
+    'material': material,
+    'exam': exam,
+    'gender': gender,
+    'birthDate': _toApiBirthDate(birthDate),
+  };
+
+  if (clientToken != null && clientToken.isNotEmpty) {
+    queryParameters['clientToken'] = clientToken;
+  }
+
+  final uri = Uri.parse(
+    '$bffBaseUrl/questionnaires',
+  ).replace(queryParameters: queryParameters);
+  final response = await http.get(uri, headers: {'Accept': 'application/json'});
+
+  if (response.statusCode < 200 || response.statusCode >= 300) {
+    throw Exception(
+      'BFF retornou HTTP ${response.statusCode}: ${_truncate(response.body)}',
+    );
+  }
+
+  final payload = jsonDecode(response.body);
+
+  if (payload is! List) {
+    throw Exception('Resposta do BFF de questionarios nao e uma lista.');
+  }
+
+  return payload
+      .whereType<Map<String, dynamic>>()
+      .map(ExamQuestionnaire.fromJson)
       .toList();
 }
 
