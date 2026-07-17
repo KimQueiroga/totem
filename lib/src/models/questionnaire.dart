@@ -3,9 +3,13 @@ class ExamQuestionnaireCheck {
 
   factory ExamQuestionnaireCheck.fromJson(Map<String, dynamic> json) {
     return ExamQuestionnaireCheck(
-      examHasQuestionnaire:
-          json['examHasQuestionnaire'] == true ||
-          json['examHasQuestionnaire']?.toString().toLowerCase() == 'true',
+      examHasQuestionnaire: _boolValue(
+        json['examHasQuestionnaire'] ??
+            json['examsHasQuestionnaire'] ??
+            json['hasQuestionnaire'] ??
+            json['possuiQuestionario'] ??
+            json['questionnaire'],
+      ),
     );
   }
 

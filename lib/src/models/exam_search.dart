@@ -11,30 +11,53 @@ class ExamSearchResult {
   });
 
   factory ExamSearchResult.fromJson(Map<String, dynamic> json) {
-    final material = json['material'];
+    final exam = _firstNestedMap(json, const ['exam', 'exame', 'procedure']);
+    final material = _firstNestedMap(json, const ['material', 'sampleMaterial']);
 
     return ExamSearchResult(
       id: json['id']?.toString() ?? '',
-      mnemonic: _extractFirstString(json, const [
+      mnemonic: _extractFirstString([
+        json,
+        if (exam != null) exam,
+      ], const [
         'mnemonic',
         'mnemonico',
         'mnemonicCode',
+        'mnemonic_code',
         'sigla',
+        'siglaExame',
+        'mnemonicoExame',
       ]),
-      description: json['description']?.toString() ?? '',
+      description:
+          json['description']?.toString() ??
+          json['descricao']?.toString() ??
+          exam?['description']?.toString() ??
+          exam?['descricao']?.toString() ??
+          '',
       materialMnemonic: material is Map<String, dynamic>
-          ? _extractFirstString(material, const [
+          ? _extractFirstString([material], const [
               'mnemonic',
               'mnemonico',
               'mnemonicCode',
+              'mnemonic_code',
               'sigla',
               'code',
               'codigo',
+              'codigoMaterial',
             ])
-          : '',
+          : _extractFirstString([json], const [
+              'materialMnemonic',
+              'mnemonicoMaterial',
+              'codigoMaterial',
+              'materialCode',
+            ]),
       materialDescription: material is Map<String, dynamic>
-          ? material['description']?.toString() ?? ''
-          : '',
+          ? material['description']?.toString() ??
+                material['descricao']?.toString() ??
+                ''
+          : json['materialDescription']?.toString() ??
+                json['descricaoMaterial']?.toString() ??
+                '',
       negotiatedCodes: json['negotiatedCode'] is List
           ? List<String>.from(
               (json['negotiatedCode'] as List).map(
@@ -83,16 +106,36 @@ class ProcedureExamSearch {
       results.isNotEmpty ? results.first : null;
 }
 
-String _extractFirstString(Map<String, dynamic> json, List<String> keys) {
+Map<String, dynamic>? _firstNestedMap(
+  Map<String, dynamic> json,
+  List<String> keys,
+) {
   for (final key in keys) {
     final value = json[key];
 
-    if (value is String && value.trim().isNotEmpty) {
-      return value.trim();
+    if (value is Map<String, dynamic>) {
+      return value;
     }
+  }
 
-    if (value is num) {
-      return value.toString();
+  return null;
+}
+
+String _extractFirstString(
+  List<Map<String, dynamic>> sources,
+  List<String> keys,
+) {
+  for (final source in sources) {
+    for (final key in keys) {
+      final value = source[key];
+
+      if (value is String && value.trim().isNotEmpty) {
+        return value.trim();
+      }
+
+      if (value is num) {
+        return value.toString();
+      }
     }
   }
 
