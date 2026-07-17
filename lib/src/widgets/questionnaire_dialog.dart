@@ -106,6 +106,84 @@ class _QuestionnaireDialogState extends State<QuestionnaireDialog> {
     final selectedAnswer = _answers[step.answerKey] ?? '';
     final isFirst = _currentIndex == 0;
     final isLast = _currentIndex == _steps.length - 1;
+    final questionPanel = DecoratedBox(
+      decoration: BoxDecoration(
+        border: Border.all(
+          color: widget.primaryColor.withOpacity(0.3),
+        ),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              question.description,
+              style: Theme.of(context).textTheme.titleMedium
+                  ?.copyWith(fontWeight: FontWeight.w700),
+            ),
+            if (question.mandatory)
+              Padding(
+                padding: const EdgeInsets.only(top: 4),
+                child: Text(
+                  'Obrigatorio',
+                  style: TextStyle(
+                    color: widget.primaryColor,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ),
+            const SizedBox(height: 16),
+            if (options.isNotEmpty)
+              _QuestionnaireOptions(
+                options: options,
+                selectedAnswer: selectedAnswer,
+                primaryColor: widget.primaryColor,
+                onSelected: (value) {
+                  setState(() {
+                    _answers[step.answerKey] = value;
+                    _errorMessage = null;
+                  });
+                },
+              )
+            else
+              TextField(
+                controller: _textController,
+                focusNode: _focusNode,
+                minLines: 1,
+                maxLines: inputKind == QuestionnaireInputKind.text ? 2 : 1,
+                keyboardType: _keyboardType(inputKind),
+                onTap: () => setState(() => _keyboardOpen = true),
+                onChanged: _handleTextChanged,
+                decoration: InputDecoration(
+                  labelText: _inputLabel(question),
+                  border: const OutlineInputBorder(),
+                ),
+              ),
+          ],
+        ),
+      ),
+    );
+    final keyboard = NumericTouchKeyboard(
+      color: widget.primaryColor,
+      activeFieldLabel: _inputLabel(question),
+      nextLabel: 'Concluir',
+      layout: _touchKeyboardLayout(inputKind),
+      includeSpace: inputKind == QuestionnaireInputKind.text,
+      isUpperCase: _isUpperCase,
+      compact: true,
+      borderRadius: BorderRadius.circular(8),
+      onToggleLetterCase: () {
+        setState(() => _isUpperCase = !_isUpperCase);
+      },
+      onDigit: _appendKeyboardValue,
+      onBackspace: _backspaceKeyboardValue,
+      onClear: _clearKeyboardField,
+      onNext: _closeKeyboard,
+      onClose: _closeKeyboard,
+    );
 
     return AlertDialog(
       insetPadding: const EdgeInsets.symmetric(horizontal: 22, vertical: 18),
@@ -137,94 +215,32 @@ class _QuestionnaireDialogState extends State<QuestionnaireDialog> {
                 ),
               ),
               const SizedBox(height: 12),
-              DecoratedBox(
-                decoration: BoxDecoration(
-                  border: Border.all(
-                    color: widget.primaryColor.withOpacity(0.3),
-                  ),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(
-                        question.description,
-                        style: Theme.of(context).textTheme.titleMedium
-                            ?.copyWith(fontWeight: FontWeight.w700),
-                      ),
-                      if (question.mandatory)
-                        Padding(
-                          padding: const EdgeInsets.only(top: 4),
-                          child: Text(
-                            'Obrigatorio',
-                            style: TextStyle(
-                              color: widget.primaryColor,
-                              fontWeight: FontWeight.w700,
-                            ),
-                          ),
-                        ),
-                      const SizedBox(height: 16),
-                      if (options.isNotEmpty)
-                        _QuestionnaireOptions(
-                          options: options,
-                          selectedAnswer: selectedAnswer,
-                          primaryColor: widget.primaryColor,
-                          onSelected: (value) {
-                            setState(() {
-                              _answers[step.answerKey] = value;
-                              _errorMessage = null;
-                            });
-                          },
-                        )
-                      else
-                        TextField(
-                          controller: _textController,
-                          focusNode: _focusNode,
-                          minLines: 1,
-                          maxLines: inputKind == QuestionnaireInputKind.text
-                              ? 2
-                              : 1,
-                          keyboardType: _keyboardType(inputKind),
-                          onTap: () => setState(() => _keyboardOpen = true),
-                          onChanged: _handleTextChanged,
-                          decoration: InputDecoration(
-                            labelText: _inputLabel(question),
-                            border: const OutlineInputBorder(),
-                          ),
-                        ),
-                    ],
-                  ),
-                ),
-              ),
-              if (_keyboardOpen && options.isEmpty) ...[
-                const SizedBox(height: 12),
-                Align(
-                  alignment: Alignment.center,
-                  child: SizedBox(
-                    width: 560,
-                    child: NumericTouchKeyboard(
-                      color: widget.primaryColor,
-                      activeFieldLabel: _inputLabel(question),
-                      nextLabel: 'Concluir',
-                      layout: _touchKeyboardLayout(inputKind),
-                      includeSpace: inputKind == QuestionnaireInputKind.text,
-                      isUpperCase: _isUpperCase,
-                      compact: true,
-                      borderRadius: BorderRadius.circular(8),
-                      onToggleLetterCase: () {
-                        setState(() => _isUpperCase = !_isUpperCase);
-                      },
-                      onDigit: _appendKeyboardValue,
-                      onBackspace: _backspaceKeyboardValue,
-                      onClear: _clearKeyboardField,
-                      onNext: _closeKeyboard,
-                      onClose: _closeKeyboard,
+              if (_keyboardOpen && options.isEmpty)
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Expanded(child: questionPanel),
+                    const SizedBox(width: 12),
+                    SizedBox(
+                      width: inputKind == QuestionnaireInputKind.text
+                          ? 470
+                          : 360,
+                      child: keyboard,
+                    ),
+                  ],
+                )
+              else ...[
+                questionPanel,
+                if (_keyboardOpen && options.isEmpty) ...[
+                  const SizedBox(height: 12),
+                  Align(
+                    alignment: Alignment.center,
+                    child: SizedBox(
+                      width: 560,
+                      child: keyboard,
                     ),
                   ),
-                ),
+                ],
               ],
               if (_errorMessage != null) ...[
                 const SizedBox(height: 10),
