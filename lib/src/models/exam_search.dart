@@ -50,14 +50,18 @@ class ProcedureExamSearch {
     required this.keyword,
     required this.results,
     this.fallbackDescription = '',
+    this.fallbackMaterialCode = '',
     this.fallbackMaterialDescription = '',
+    this.fallbackSampleCondition = '',
     this.error,
   });
 
   final String keyword;
   final List<ExamSearchResult> results;
   final String fallbackDescription;
+  final String fallbackMaterialCode;
   final String fallbackMaterialDescription;
+  final String fallbackSampleCondition;
   final String? error;
 
   bool get hasResults => results.isNotEmpty;

@@ -267,12 +267,12 @@ class _ExamResultTable extends StatelessWidget {
             primaryColor.withOpacity(0.08),
           ),
           columns: const [
-            DataColumn(label: Text('Procedimento')),
+            DataColumn(label: Text('Entregue?')),
+            DataColumn(label: Text('Excluir?')),
             DataColumn(label: Text('Exame')),
             DataColumn(label: Text('Conservante')),
             DataColumn(label: Text('Descricao')),
             DataColumn(label: Text('Condicao amostra')),
-            DataColumn(label: Text('Status')),
           ],
           rows: results.map((item) {
             final exam = item.firstResult;
@@ -280,33 +280,39 @@ class _ExamResultTable extends StatelessWidget {
               exam?.description,
               item.fallbackDescription,
             ]);
-            final materialDescription = _firstNotEmpty([
-              exam?.materialDescription,
-              item.fallbackMaterialDescription,
+            final examCode = _firstNotEmpty([
+              exam?.mnemonic,
+              exam?.id,
+              item.keyword,
             ]);
-            final status = exam != null
-                ? 'Encontrado'
-                : item.error != null
-                ? 'Detalhes indisponiveis'
-                : 'Nao encontrado';
-            final condition = exam?.sampleConditionIsRequired == true
-                ? 'Sim'
-                : 'Nao';
+            final materialCode = _firstNotEmpty([
+              exam?.materialMnemonic,
+              item.fallbackMaterialCode,
+            ]);
+            final materialDescription = _firstNotEmpty([
+              item.fallbackMaterialDescription,
+              exam?.materialDescription,
+            ]);
+            final condition = _firstNotEmpty([
+              item.fallbackSampleCondition,
+            ]);
+            final examLabel = _buildExamLabel(
+              examCode: examCode,
+              description: description,
+              materialCode: materialCode,
+              materialDescription: materialDescription,
+            );
 
             return DataRow(
               cells: [
-                DataCell(Text(item.keyword)),
-                DataCell(
-                  Text(
-                    exam?.mnemonic.isNotEmpty == true
-                        ? exam!.mnemonic
-                        : exam?.id ?? '-',
-                  ),
-                ),
+                const DataCell(Checkbox(value: true, onChanged: null)),
+                const DataCell(Checkbox(value: false, onChanged: null)),
+                DataCell(Text(examLabel)),
+                // TODO: preencher pela rota especifica de conservante quando o
+                // contrato existir. basic/exams e uma consulta geral de exames.
+                const DataCell(Text('-')),
                 DataCell(Text(materialDescription)),
-                DataCell(Text(description)),
                 DataCell(Text(condition)),
-                DataCell(Text(status)),
               ],
             );
           }).toList(),
@@ -314,6 +320,31 @@ class _ExamResultTable extends StatelessWidget {
       ),
     );
   }
+}
+
+String _buildExamLabel({
+  required String examCode,
+  required String description,
+  required String materialCode,
+  required String materialDescription,
+}) {
+  final buffer = StringBuffer();
+
+  if (materialCode != '-') {
+    buffer.write('$materialCode || ');
+  }
+
+  buffer.write(examCode);
+
+  if (description != '-') {
+    buffer.write(' - $description');
+  }
+
+  if (materialDescription != '-') {
+    buffer.write(' / $materialDescription');
+  }
+
+  return buffer.toString();
 }
 
 String _firstNotEmpty(List<String?> values) {

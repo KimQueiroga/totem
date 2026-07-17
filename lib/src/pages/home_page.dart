@@ -376,14 +376,18 @@ class _HomePageState extends State<HomePage> {
             keyword: keyword,
             results: results,
             fallbackDescription: exam.description,
+            fallbackMaterialCode: exam.materialCode,
             fallbackMaterialDescription: exam.materialDescription,
+            fallbackSampleCondition: exam.sampleCondition,
           );
         } catch (error) {
           return ProcedureExamSearch(
             keyword: keyword,
             results: const [],
             fallbackDescription: exam.description,
+            fallbackMaterialCode: exam.materialCode,
             fallbackMaterialDescription: exam.materialDescription,
+            fallbackSampleCondition: exam.sampleCondition,
             error: 'Detalhes indisponiveis',
           );
         }

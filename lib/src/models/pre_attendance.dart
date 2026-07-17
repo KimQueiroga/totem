@@ -221,18 +221,64 @@ class PreAttendanceExam {
   const PreAttendanceExam({
     required this.code,
     required this.description,
+    required this.materialCode,
     required this.materialDescription,
+    required this.sampleCondition,
   });
 
   factory PreAttendanceExam.fromJson(Map<String, dynamic> json) {
     return PreAttendanceExam(
       code: json['codigoExame']?.toString() ?? '',
       description: json['descricaoExame']?.toString() ?? '',
+      materialCode: _extractFirstString(json, const [
+        'codigoMaterial',
+        'material',
+        'mnemonicoMaterial',
+      ]),
       materialDescription: json['descricaoMaterial']?.toString() ?? '',
+      sampleCondition: _extractFirstString(json, const [
+        'condicaoAmostra',
+        'condicaoMaterial',
+        'condicaoAmostraMaterial',
+        'condicaoAmostraExame',
+        'condicao',
+      ]),
     );
   }
 
   final String code;
   final String description;
+  final String materialCode;
   final String materialDescription;
+  final String sampleCondition;
+}
+
+String _extractFirstString(Map<String, dynamic> json, List<String> keys) {
+  for (final key in keys) {
+    final value = json[key];
+
+    if (value is String && value.trim().isNotEmpty) {
+      return value.trim();
+    }
+
+    if (value is num) {
+      return value.toString();
+    }
+
+    if (value is Map<String, dynamic>) {
+      for (final nestedKey in ['codigo', 'id', 'mnemonico', 'sigla', 'nome']) {
+        final nestedValue = value[nestedKey];
+
+        if (nestedValue is String && nestedValue.trim().isNotEmpty) {
+          return nestedValue.trim();
+        }
+
+        if (nestedValue is num) {
+          return nestedValue.toString();
+        }
+      }
+    }
+  }
+
+  return '';
 }
