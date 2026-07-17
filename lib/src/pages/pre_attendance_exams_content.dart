@@ -362,6 +362,7 @@ class _PreAttendanceExamsContentState extends State<PreAttendanceExamsContent> {
 
     try {
       final sets = <ExamQuestionnaireSet>[];
+      final examsWithQuestionnaire = <_QuestionnaireExamCandidate>[];
       final errors = <Object>[];
 
       for (final candidate in uniqueSelectedExams) {
@@ -375,6 +376,19 @@ class _PreAttendanceExamsContentState extends State<PreAttendanceExamsContent> {
             continue;
           }
 
+          examsWithQuestionnaire.add(candidate);
+        } catch (error) {
+          errors.add(error);
+          continue;
+        }
+      }
+
+      if (examsWithQuestionnaire.isEmpty && errors.isNotEmpty) {
+        throw errors.first;
+      }
+
+      for (final candidate in examsWithQuestionnaire) {
+        try {
           final questionnaires = await fetchQuestionnaires(
             material: candidate.material,
             exam: candidate.examForQuestionnaire,
@@ -404,7 +418,9 @@ class _PreAttendanceExamsContentState extends State<PreAttendanceExamsContent> {
         }
       }
 
-      if (sets.isEmpty && errors.isNotEmpty) {
+      if (sets.isEmpty &&
+          examsWithQuestionnaire.isNotEmpty &&
+          errors.isNotEmpty) {
         throw errors.first;
       }
 
